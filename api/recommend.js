@@ -78,7 +78,7 @@ export default async function handler(req, res) {
   }
 
   if (!process.env.ACCIONES) {
-    return jsonResponse(res, 500, { error: "Server misconfiguration: missing ORTO" });
+    return jsonResponse(res, 500, { error: "Server misconfiguration: missing ACCIONES" });
   }
 
   try {
@@ -90,7 +90,7 @@ export default async function handler(req, res) {
     }
 
     const userPrompt = buildUserPrompt(payload);
-    const result = await requestPortfolio(userPrompt, process.env.ORTO);
+    const result = await requestPortfolio(userPrompt, process.env.ACCIONES);
 
     if (!result) {
       return jsonResponse(res, 502, { error: "Empty response from model" });
