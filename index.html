@@ -232,7 +232,7 @@
             throw new Error(data.error || "No fue posible generar la cartera.");
           }
 
-          outputEl.textContent = data.result || "Sin contenido.";
+          outputEl.textContent = data.text || data.result || "Sin contenido.";
           statusEl.textContent = "Simulación generada.";
         } catch (error) {
           statusEl.className = "status error";
