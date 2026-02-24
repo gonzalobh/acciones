@@ -77,7 +77,7 @@ export default async function handler(req, res) {
     return jsonResponse(res, 405, { error: "Method not allowed" });
   }
 
-  if (!process.env.ORTO) {
+  if (!process.env.ACCIONES) {
     return jsonResponse(res, 500, { error: "Server misconfiguration: missing ORTO" });
   }
 
