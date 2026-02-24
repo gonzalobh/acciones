@@ -11,11 +11,11 @@ export default async function handler(req) {
       );
     }
 
-    const apiKey = process.env.ORTO;
+    const apiKey = process.env.ACCIONES;
 
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: "Missing ORTO environment variable" }),
+        JSON.stringify({ error: "Missing ACCIONES environment variable" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
