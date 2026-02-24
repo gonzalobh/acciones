@@ -1,103 +1,72 @@
-const SYSTEM_PROMPT = `You are an educational financial assistant specialized in Chilean stocks listed on the Santiago Stock Exchange.
-Do NOT provide financial advice.
-Do NOT give direct buy/sell orders.
-Provide a simulated diversified portfolio.
+export const config = {
+  runtime: "edge",
+};
 
-Constraints:
-- Only Chilean stocks
-- Maximum 12 stocks
-- No single stock above 20%
-- Avoid extreme sector concentration
-- Provide:
-  1) Executive summary (5 lines)
-  2) Allocation table (Stock | % | Role)
-  3) Risk factors specific to Chile
-  4) Rebalancing suggestion
-- Do NOT promise returns
-- If you mention returns, use ranges with disclaimer`;
-
-function jsonResponse(res, status, body) {
-  res.status(status).json(body);
-}
-
-function validatePayload(payload) {
-  const requiredFields = ["capital", "horizon", "risk", "objective"];
-
-  for (const field of requiredFields) {
-    if (!payload[field] || String(payload[field]).trim() === "") {
-      return `Missing required field: ${field}`;
-    }
-  }
-
-  return null;
-}
-
-function buildUserPrompt({ capital, horizon, risk, objective, constraints }) {
-  const safeConstraints = constraints && constraints.trim() !== "" ? constraints.trim() : "Ninguna";
-
-  return `Generate a clean-text simulated Chilean stock portfolio using the following inputs:
-- Capital (CLP): ${capital}
-- Investment horizon (years): ${horizon}
-- Risk level: ${risk}
-- Objective: ${objective}
-- Optional constraints: ${safeConstraints}
-
-Output language: Spanish.
-Remember: educational simulation only, not financial advice.`;
-}
-
-async function requestPortfolio(userPrompt, apiKey) {
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      temperature: 0.4,
-      input: [
-        { role: "system", content: [{ type: "input_text", text: SYSTEM_PROMPT }] },
-        { role: "user", content: [{ type: "input_text", text: userPrompt }] },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const details = await response.text();
-    throw new Error(`OpenAI error (${response.status}): ${details}`);
-  }
-
-  const data = await response.json();
-  return data.output_text ? data.output_text.trim() : "";
-}
-
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return jsonResponse(res, 405, { error: "Method not allowed" });
-  }
-
-  if (!process.env.ACCIONES) {
-    return jsonResponse(res, 500, { error: "Server misconfiguration: missing ACCIONES" });
-  }
-
+export default async function handler(req) {
   try {
-    const payload = req.body && typeof req.body === "object" ? req.body : {};
-    const validationError = validatePayload(payload);
-
-    if (validationError) {
-      return jsonResponse(res, 400, { error: validationError });
+    if (req.method !== "POST") {
+      return new Response("Method not allowed", { status: 405 });
     }
 
-    const userPrompt = buildUserPrompt(payload);
-    const result = await requestPortfolio(userPrompt, process.env.ACCIONES);
+    const body = await req.json();
 
-    if (!result) {
-      return jsonResponse(res, 502, { error: "Empty response from model" });
+    const apiKey = process.env.ORTO;
+    if (!apiKey) {
+      return new Response("Missing ORTO env variable", { status: 500 });
     }
 
-    return jsonResponse(res, 200, { result });
-  } catch (error) {
-    return jsonResponse(res, 500, { error: "Failed to generate simulation" });
+    const { monto, horizonte, riesgo, objetivo, restricciones } = body;
+
+    const systemPrompt = `
+You are an educational financial assistant specialized in Chilean stocks.
+Do NOT give financial advice.
+Only simulate diversified portfolios.
+Maximum 12 stocks.
+No stock above 20%.
+Avoid sector concentration.
+Return:
+1. Executive summary
+2. Allocation table
+3. Chile-specific risks
+4. Rebalancing suggestion
+`;
+
+    const userPrompt = `
+Capital: ${monto} CLP
+Horizon: ${horizonte} years
+Risk: ${riesgo}
+Objective: ${objetivo}
+Constraints: ${restricciones}
+`;
+
+    const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        input: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.4
+      }),
+    });
+
+    const data = await openaiResponse.json();
+
+    const text =
+      data.output_text ||
+      data.output?.[0]?.content?.[0]?.text ||
+      "No response";
+
+    return new Response(JSON.stringify({ text }), {
+      headers: { "Content-Type": "application/json" },
+    });
+
+  } catch (err) {
+    return new Response("Server error: " + err.message, { status: 500 });
   }
 }
