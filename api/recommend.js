@@ -11,14 +11,67 @@ function jsonResponse(body, status = 200) {
   });
 }
 
+function isMissing(value) {
+  return value === undefined || value === null || String(value).trim() === "";
+}
+
+function buildPrompt({ monto, horizonte, riesgo, objetivo, restricciones }) {
+  return [
+    "Devuelve SOLO JSON válido, sin markdown, sin bloques de código y sin texto adicional.",
+    "Todas las claves y todos los textos deben estar en español.",
+    "Construye una propuesta educativa de cartera de acciones chilenas para este perfil:",
+    `- Monto (CLP): ${monto}`,
+    `- Horizonte (años): ${horizonte}`,
+    `- Riesgo: ${riesgo}`,
+    `- Objetivo: ${objetivo}`,
+    `- Restricciones: ${restricciones || "Sin restricciones adicionales"}`,
+    "",
+    "Restricciones del modelo:",
+    "- Solo acciones chilenas con liquidez razonable",
+    "- Máximo 12 acciones",
+    "- Ninguna acción > 20%",
+    "- Evitar concentración sectorial extrema",
+    "- No repetir tickers",
+    "- Responder en español",
+    "- No prometer rentabilidad",
+    "- Si das rangos, usa lenguaje prudente",
+    "- JSON válido solamente",
+    "",
+    "Estructura JSON requerida (claves exactas):",
+    '{',
+    '  "resumenEjecutivo": "string",',
+    '  "asignacion": [',
+    "    {",
+    '      "ticker": "string",',
+    '      "empresa": "string",',
+    '      "sector": "string",',
+    '      "porcentaje": 0,',
+    '      "rol": "string",',
+    '      "montoCLP": 0',
+    "    }",
+    "  ],",
+    '  "riesgosChile": ["string", "string"],',
+    '  "rebalanceo": {',
+    '    "frecuencia": "string",',
+    '    "regla": "string",',
+    '    "comentario": "string"',
+    "  },",
+    '  "metricas": {',
+    '    "rentabilidadEsperadaRango": "string",',
+    '    "volatilidadEstimadaRango": "string"',
+    "  }",
+    "}",
+  ].join("\n");
+}
+
 export default async function handler(req) {
   if (req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405);
+    return jsonResponse({ ok: false, error: "Método no permitido" }, 405);
   }
 
   const apiKey = process.env.ACCIONES;
   if (!apiKey) {
-    return jsonResponse({ error: "Missing ACCIONES environment variable" }, 500);
+    return jsonResponse({ ok: false, error: "Falta la variable de entorno ACCIONES" }, 500);
   }
 
   try {
@@ -35,23 +88,20 @@ export default async function handler(req) {
       ["riesgo", riesgo],
       ["objetivo", objetivo],
     ]
-      .filter(([, value]) => value === undefined)
+      .filter(([, value]) => isMissing(value))
       .map(([field]) => field);
 
     if (missingFields.length > 0) {
       return jsonResponse(
         {
-          error: `Missing required fields: ${missingFields.join(", ")}`,
-          missing: missingFields,
+          ok: false,
+          error: `Faltan campos requeridos: ${missingFields.join(", ")}`,
         },
         400
       );
     }
 
-    const systemPrompt =
-      "You are an educational financial assistant specialized in Chilean stocks. Do NOT give financial advice. Maximum 12 stocks. No stock above 20%. Avoid sector concentration. Return: 1) Executive summary, 2) Allocation table, 3) Chile-specific risks, 4) Rebalancing suggestion.";
-
-    const userPrompt = `Capital: ${monto} CLP\nHorizon: ${horizonte} years\nRisk: ${riesgo}\nObjective: ${objetivo}\nConstraints: ${restricciones}`;
+    const prompt = buildPrompt({ monto, horizonte, riesgo, objetivo, restricciones });
 
     const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -61,21 +111,29 @@ export default async function handler(req) {
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
+        temperature: 0.3,
         input: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
+          {
+            role: "user",
+            content: prompt,
+          },
         ],
-        temperature: 0.4,
       }),
     });
 
     const data = await openaiResponse.json();
 
     if (!openaiResponse.ok) {
-      return jsonResponse({ error: data?.error?.message || "OpenAI error" }, openaiResponse.status);
+      return jsonResponse(
+        {
+          ok: false,
+          error: data?.error?.message || "Error en OpenAI",
+        },
+        openaiResponse.status
+      );
     }
 
-    const text =
+    const rawText =
       data?.output
         ?.flatMap((item) => item?.content || [])
         ?.filter((content) => content?.type === "output_text")
@@ -83,12 +141,24 @@ export default async function handler(req) {
         ?.join("\n")
         ?.trim() || "";
 
-    if (!text) {
-      return jsonResponse({ error: "No output_text returned by OpenAI" }, 502);
+    if (!rawText) {
+      return jsonResponse({ ok: false, error: "El modelo no devolvió texto utilizable" }, 502);
     }
 
-    return jsonResponse({ text });
+    try {
+      const portfolio = JSON.parse(rawText);
+      return jsonResponse({ ok: true, data: portfolio });
+    } catch {
+      return jsonResponse(
+        {
+          ok: false,
+          error: "No se pudo parsear JSON del modelo",
+          rawText,
+        },
+        502
+      );
+    }
   } catch (error) {
-    return jsonResponse({ error: error?.message || "Unexpected error" }, 500);
+    return jsonResponse({ ok: false, error: error?.message || "Error inesperado" }, 500);
   }
 }

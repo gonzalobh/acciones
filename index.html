@@ -117,12 +117,56 @@
         border: 1px solid var(--border);
         border-radius: 12px;
         padding: 16px;
-        white-space: pre-wrap;
-        word-break: break-word;
-        overflow-wrap: anywhere;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-          "Courier New", monospace;
-        font-size: 0.9rem;
+        overflow-x: auto;
+      }
+
+      .section {
+        margin-bottom: 16px;
+      }
+
+      .section:last-child {
+        margin-bottom: 0;
+      }
+
+      .section-title {
+        margin: 0 0 6px;
+        font-size: 0.86rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+
+      p,
+      li,
+      td,
+      th {
+        font-size: 0.92rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        border: 1px solid var(--border);
+        text-align: left;
+        padding: 8px;
+        vertical-align: top;
+      }
+
+      th {
+        font-weight: 600;
+      }
+
+      ol {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .muted {
+        color: var(--muted);
       }
 
       .disclaimer {
@@ -159,28 +203,28 @@
             </label>
 
             <label>
-              Investment horizon (years)
+              Horizonte de inversión (años)
               <input id="horizon" name="horizon" type="number" min="1" step="1" required />
             </label>
 
             <label>
-              Risk level
+              Nivel de riesgo
               <select id="risk" name="risk" required>
                 <option value="">Selecciona nivel</option>
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="Medium-High">Medium-High</option>
-                <option value="High">High</option>
+                <option value="Bajo">Bajo</option>
+                <option value="Medio">Medio</option>
+                <option value="Medio-Alto">Medio-Alto</option>
+                <option value="Alto">Alto</option>
               </select>
             </label>
 
             <label>
-              Objective
+              Objetivo
               <input id="objective" name="objective" type="text" maxlength="200" required />
             </label>
 
             <label>
-              Optional constraints
+              Restricciones opcionales
               <textarea id="constraints" name="constraints" maxlength="800"></textarea>
             </label>
 
@@ -190,7 +234,7 @@
         </article>
 
         <article class="panel">
-          <pre id="output" class="output-box">Completa el formulario para generar una simulación.</pre>
+          <div id="output" class="output-box">Completa el formulario para generar una simulación.</div>
           <p class="disclaimer">Simulación educativa. No es asesoría financiera.</p>
         </article>
       </section>
@@ -201,6 +245,106 @@
       const button = document.getElementById("submitBtn");
       const statusEl = document.getElementById("status");
       const outputEl = document.getElementById("output");
+
+      const clpFormatter = new Intl.NumberFormat("es-CL", {
+        style: "currency",
+        currency: "CLP",
+        maximumFractionDigits: 0,
+      });
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function renderPortfolio(portfolio) {
+        const resumen = portfolio?.resumenEjecutivo;
+        const metricas = portfolio?.metricas || {};
+        const asignacion = Array.isArray(portfolio?.asignacion) ? portfolio.asignacion : [];
+        const riesgos = Array.isArray(portfolio?.riesgosChile) ? portfolio.riesgosChile : [];
+        const rebalanceo = portfolio?.rebalanceo || {};
+
+        const rows = asignacion
+          .map((item) => {
+            const monto = Number(item?.montoCLP);
+            const porcentaje = Number(item?.porcentaje);
+            return `
+              <tr>
+                <td>${escapeHtml(item?.ticker ?? "-")}</td>
+                <td>${escapeHtml(item?.empresa ?? "-")}</td>
+                <td>${escapeHtml(item?.sector ?? "-")}</td>
+                <td>${Number.isFinite(porcentaje) ? `${porcentaje}%` : "-"}</td>
+                <td>${escapeHtml(item?.rol ?? "-")}</td>
+                <td>${Number.isFinite(monto) ? clpFormatter.format(monto) : "-"}</td>
+              </tr>
+            `;
+          })
+          .join("");
+
+        const riesgosHtml = riesgos
+          .map((riesgo) => `<li>${escapeHtml(riesgo)}</li>`)
+          .join("");
+
+        outputEl.innerHTML = `
+          <section class="section">
+            <h2 class="section-title">Resumen ejecutivo</h2>
+            <p>${escapeHtml(resumen || "No se recibió resumen ejecutivo.")}</p>
+          </section>
+
+          <section class="section">
+            <h2 class="section-title">Métricas estimadas</h2>
+            <p><strong>Rentabilidad esperada:</strong> ${escapeHtml(
+              metricas?.rentabilidadEsperadaRango || "No disponible"
+            )}</p>
+            <p><strong>Volatilidad estimada:</strong> ${escapeHtml(
+              metricas?.volatilidadEstimadaRango || "No disponible"
+            )}</p>
+          </section>
+
+          <section class="section">
+            <h2 class="section-title">Asignación</h2>
+            ${
+              asignacion.length
+                ? `
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Ticker</th>
+                        <th>Empresa</th>
+                        <th>Sector</th>
+                        <th>%</th>
+                        <th>Rol</th>
+                        <th>Monto (CLP)</th>
+                      </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                  </table>
+                `
+                : '<p class="muted">No se recibió una asignación válida para mostrar.</p>'
+            }
+          </section>
+
+          <section class="section">
+            <h2 class="section-title">Riesgos principales en Chile</h2>
+            ${
+              riesgos.length
+                ? `<ol>${riesgosHtml}</ol>`
+                : '<p class="muted">No se recibieron riesgos específicos.</p>'
+            }
+          </section>
+
+          <section class="section">
+            <h2 class="section-title">Rebalanceo sugerido</h2>
+            <p><strong>Frecuencia:</strong> ${escapeHtml(rebalanceo?.frecuencia || "No disponible")}</p>
+            <p><strong>Regla:</strong> ${escapeHtml(rebalanceo?.regla || "No disponible")}</p>
+            <p><strong>Comentario:</strong> ${escapeHtml(rebalanceo?.comentario || "No disponible")}</p>
+          </section>
+        `;
+      }
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -226,13 +370,13 @@
             body: JSON.stringify(payload),
           });
 
-          const data = await response.json();
+          const result = await response.json();
 
-          if (!response.ok) {
-            throw new Error(data.error || "No fue posible generar la cartera.");
+          if (!response.ok || result?.ok === false) {
+            throw new Error(result?.error || "No fue posible generar la cartera.");
           }
 
-          outputEl.textContent = data.text || data.result || "Sin contenido.";
+          renderPortfolio(result?.data || {});
           statusEl.textContent = "Simulación generada.";
         } catch (error) {
           statusEl.className = "status error";
