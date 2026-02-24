@@ -23,19 +23,26 @@ export default async function handler(req) {
 
   try {
     const body = await req.json();
-    const { monto, horizonte, riesgo, objetivo, restricciones } = body || {};
+    const monto = body?.monto ?? body?.capital;
+    const horizonte = body?.horizonte ?? body?.horizon;
+    const riesgo = body?.riesgo ?? body?.risk;
+    const objetivo = body?.objetivo ?? body?.objective;
+    const restricciones = body?.restricciones ?? body?.constraints ?? "";
 
-    if (
-      monto === undefined ||
-      horizonte === undefined ||
-      riesgo === undefined ||
-      objetivo === undefined ||
-      restricciones === undefined
-    ) {
+    const missingFields = [
+      ["monto", monto],
+      ["horizonte", horizonte],
+      ["riesgo", riesgo],
+      ["objetivo", objetivo],
+    ]
+      .filter(([, value]) => value === undefined)
+      .map(([field]) => field);
+
+    if (missingFields.length > 0) {
       return jsonResponse(
         {
-          error:
-            "Missing required fields: monto, horizonte, riesgo, objetivo, restricciones",
+          error: `Missing required fields: ${missingFields.join(", ")}`,
+          missing: missingFields,
         },
         400
       );
