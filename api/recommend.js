@@ -5,22 +5,28 @@ export const config = {
 export default async function handler(req) {
   try {
     if (req.method !== "POST") {
-      return new Response("Method not allowed", { status: 405 });
+      return new Response(
+        JSON.stringify({ error: "Method not allowed" }),
+        { status: 405, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const apiKey = process.env.ORTO;
+
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ error: "Missing ORTO environment variable" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     const body = await req.json();
-
-    const apiKey = process.env.ORTO;
-    if (!apiKey) {
-      return new Response("Missing ORTO env variable", { status: 500 });
-    }
 
     const { monto, horizonte, riesgo, objetivo, restricciones } = body;
 
     const systemPrompt = `
 You are an educational financial assistant specialized in Chilean stocks.
 Do NOT give financial advice.
-Only simulate diversified portfolios.
 Maximum 12 stocks.
 No stock above 20%.
 Avoid sector concentration.
@@ -39,34 +45,48 @@ Objective: ${objetivo}
 Constraints: ${restricciones}
 `;
 
-    const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        input: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        temperature: 0.4
-      }),
-    });
+    const openaiResponse = await fetch(
+      "https://api.openai.com/v1/responses",
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          input: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          temperature: 0.4
+        }),
+      }
+    );
 
     const data = await openaiResponse.json();
+
+    if (!openaiResponse.ok) {
+      return new Response(
+        JSON.stringify({ error: data.error?.message || "OpenAI error" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     const text =
       data.output_text ||
       data.output?.[0]?.content?.[0]?.text ||
       "No response";
 
-    return new Response(JSON.stringify({ text }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ text }),
+      { headers: { "Content-Type": "application/json" } }
+    );
 
   } catch (err) {
-    return new Response("Server error: " + err.message, { status: 500 });
+    return new Response(
+      JSON.stringify({ error: err.message }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
 }
