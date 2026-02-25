@@ -1,14 +1,12 @@
 export const config = {
-  runtime: "edge",
+  runtime: "nodejs",
   maxDuration: 60,
 };
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
   });
 }
 
@@ -17,73 +15,50 @@ function isMissing(value) {
 }
 
 function buildPrompt({ monto, horizonte, riesgo, objetivo, restricciones }) {
-  return `
-Actúa como un asesor de inversiones especializado en el mercado accionario chileno.
+  return `Actúa como un asesor de inversiones especializado en el mercado accionario chileno.
+Escribe como un analista financiero profesional.
 
-Debes elaborar un informe profesional, claro y educativo.
-No respondas como chatbot. Escribe como un analista financiero.
-
-IMPORTANTE:
-Devuelve SOLO JSON válido. No uses markdown.
+IMPORTANTE: Devuelve ÚNICAMENTE JSON válido. Sin texto antes ni después. Sin bloques markdown. Sin comentarios.
 
 Perfil del inversionista:
-- Capital disponible: ${monto} CLP
+- Capital: ${monto} CLP
 - Horizonte: ${horizonte} años
-- Nivel de riesgo: ${riesgo}
+- Riesgo: ${riesgo}
 - Objetivo: ${objetivo}
 - Restricciones: ${restricciones || "Ninguna"}
 
-Reglas de construcción:
-- Usar acciones chilenas líquidas (IPSA y midcaps razonables).
+Reglas:
+- Acciones chilenas líquidas (IPSA y midcaps).
 - Entre 12 y 16 acciones.
-- Diversificar por sectores.
-- No concentrar más de 30% en un sector.
-- Explicar la lógica económica detrás de la cartera.
-- No prometer resultados ni usar lenguaje comercial.
+- Diversificar por sectores. Máximo 30% por sector.
 - Lenguaje prudente y profesional.
 
-Formato JSON obligatorio:
+Responde SOLO con este JSON (sin nada más):
 
 {
-  "resumenEjecutivo": "explicación clara de la estrategia",
-  "supuestosMacro": "contexto económico chileno relevante",
+  "resumenEjecutivo": "string",
+  "supuestosMacro": "string",
   "asignacion": [
-    {
-      "accion": "Nombre empresa",
-      "ticker": "TICKER",
-      "sector": "Sector",
-      "porcentaje": number,
-      "rol": "función dentro de la cartera"
-    }
+    { "accion": "string", "ticker": "string", "sector": "string", "porcentaje": number, "rol": "string" }
   ],
   "asignacionSectorial": [
-    {
-      "sector": "Sector",
-      "porcentaje": number
-    }
+    { "sector": "string", "porcentaje": number }
   ],
   "logicaCartera": [
-    {
-      "bloque": "Nombre del bloque",
-      "descripcion": "explicación estratégica"
-    }
+    { "bloque": "string", "descripcion": "string" }
   ],
   "estimaciones": {
-    "rentabilidadEsperada": "rango razonable",
-    "volatilidad": "rango esperado",
-    "drawdown": "posibles caídas"
+    "rentabilidadEsperada": "string",
+    "volatilidad": "string",
+    "drawdown": "string"
   },
-  "riesgosPrincipales": [
-    "riesgo explicado",
-    "riesgo explicado"
-  ],
+  "riesgosPrincipales": ["string"],
   "monitoreo": {
-    "frecuencia": "cómo seguir la cartera",
-    "queMirar": ["indicador", "indicador"]
+    "frecuencia": "string",
+    "queMirar": ["string"]
   },
-  "implementacion": "cómo entrar gradualmente en el mercado"
-}
-`;
+  "implementacion": "string"
+}`;
 }
 
 export default async function handler(req) {
@@ -93,39 +68,35 @@ export default async function handler(req) {
 
   const apiKey = process.env.ACCIONES;
   if (!apiKey) {
-    return jsonResponse({ ok: false, error: "Falta la variable de entorno ACCIONES" }, 500);
+    return jsonResponse({ ok: false, error: "Falta variable de entorno ACCIONES" }, 500);
   }
 
+  let body;
   try {
-    const body = await req.json();
-    const monto = body?.monto ?? body?.capital;
-    const horizonte = body?.horizonte ?? body?.horizon;
-    const riesgo = body?.riesgo ?? body?.risk;
-    const objetivo = body?.objetivo ?? body?.objective;
-    const restricciones = body?.restricciones ?? body?.constraints ?? "";
+    body = await req.json();
+  } catch {
+    return jsonResponse({ ok: false, error: "Request body inválido" }, 400);
+  }
 
-    const missingFields = [
-      ["monto", monto],
-      ["horizonte", horizonte],
-      ["riesgo", riesgo],
-      ["objetivo", objetivo],
-    ]
-      .filter(([, value]) => isMissing(value))
-      .map(([field]) => field);
+  const monto        = body?.monto       ?? body?.capital;
+  const horizonte    = body?.horizonte   ?? body?.horizon;
+  const riesgo       = body?.riesgo      ?? body?.risk;
+  const objetivo     = body?.objetivo    ?? body?.objective;
+  const restricciones= body?.restricciones ?? body?.constraints ?? "";
 
-    if (missingFields.length > 0) {
-      return jsonResponse(
-        {
-          ok: false,
-          error: `Faltan campos requeridos: ${missingFields.join(", ")}`,
-        },
-        400
-      );
-    }
+  const missing = [["monto", monto], ["horizonte", horizonte], ["riesgo", riesgo], ["objetivo", objetivo]]
+    .filter(([, v]) => isMissing(v))
+    .map(([k]) => k);
 
-    const prompt = buildPrompt({ monto, horizonte, riesgo, objetivo, restricciones });
+  if (missing.length > 0) {
+    return jsonResponse({ ok: false, error: `Faltan campos: ${missing.join(", ")}` }, 400);
+  }
 
-    const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
+  const prompt = buildPrompt({ monto, horizonte, riesgo, objetivo, restricciones });
+
+  let openaiRes;
+  try {
+    openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -134,8 +105,13 @@ export default async function handler(req) {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         temperature: 0.2,
-        max_output_tokens: 2000,
-        input: [
+        max_tokens: 2500,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: "Eres un analista financiero chileno. Responde SIEMPRE con JSON válido y nada más.",
+          },
           {
             role: "user",
             content: prompt,
@@ -143,45 +119,43 @@ export default async function handler(req) {
         ],
       }),
     });
-
-    const data = await openaiResponse.json();
-
-    if (!openaiResponse.ok) {
-      return jsonResponse(
-        {
-          ok: false,
-          error: data?.error?.message || "Error en OpenAI",
-        },
-        openaiResponse.status
-      );
-    }
-
-    const rawText =
-      data?.output
-        ?.flatMap((item) => item?.content || [])
-        ?.filter((content) => content?.type === "output_text")
-        ?.map((content) => content?.text || "")
-        ?.join("\n")
-        ?.trim() || "";
-
-    if (!rawText) {
-      return jsonResponse({ ok: false, error: "El modelo no devolvió texto utilizable" }, 502);
-    }
-
-    try {
-      const portfolio = JSON.parse(rawText);
-      return jsonResponse({ ok: true, data: portfolio });
-    } catch {
-      return jsonResponse(
-        {
-          ok: false,
-          error: "No se pudo parsear JSON del modelo",
-          rawText,
-        },
-        502
-      );
-    }
-  } catch (error) {
-    return jsonResponse({ ok: false, error: error?.message || "Error inesperado" }, 500);
+  } catch (fetchErr) {
+    return jsonResponse({ ok: false, error: `Error de red hacia OpenAI: ${fetchErr.message}` }, 502);
   }
+
+  let data;
+  try {
+    data = await openaiRes.json();
+  } catch {
+    return jsonResponse({ ok: false, error: "OpenAI devolvió una respuesta no-JSON" }, 502);
+  }
+
+  if (!openaiRes.ok) {
+    return jsonResponse(
+      { ok: false, error: data?.error?.message || `OpenAI error ${openaiRes.status}` },
+      openaiRes.status
+    );
+  }
+
+  // Extract text from chat/completions format
+  const rawText = data?.choices?.[0]?.message?.content?.trim() ?? "";
+
+  if (!rawText) {
+    return jsonResponse({ ok: false, error: "El modelo no devolvió contenido" }, 502);
+  }
+
+  // Strip markdown fences if present (```json ... ```)
+  const cleaned = rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+
+  let portfolio;
+  try {
+    portfolio = JSON.parse(cleaned);
+  } catch {
+    return jsonResponse(
+      { ok: false, error: "No se pudo parsear el JSON del modelo", rawText: cleaned.slice(0, 500) },
+      502
+    );
+  }
+
+  return jsonResponse({ ok: true, data: portfolio });
 }
