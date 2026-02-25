@@ -1,116 +1,122 @@
 export const config = {
-  runtime: "nodejs",
-  maxDuration: 60,
+  runtime: "edge",
 };
 
-function jsonResponse(body, status = 200) {
+function jsonRes(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "Content-Type": "application/json" },
   });
 }
 
-function isMissing(value) {
-  return value === undefined || value === null || String(value).trim() === "";
+function isMissing(v) {
+  return v === undefined || v === null || String(v).trim() === "";
 }
 
 function buildPrompt({ monto, horizonte, riesgo, objetivo, restricciones }) {
-  return `Actúa como un asesor de inversiones especializado en el mercado accionario chileno.
-Escribe como un analista financiero profesional.
+  return `Eres un analista financiero chileno experto en renta variable local.
 
-IMPORTANTE: Devuelve ÚNICAMENTE JSON válido. Sin texto antes ni después. Sin bloques markdown. Sin comentarios.
+Responde ÚNICAMENTE con un objeto JSON válido. Sin texto adicional. Sin bloques markdown. Sin comentarios.
 
-Perfil del inversionista:
+Datos del inversionista:
 - Capital: ${monto} CLP
-- Horizonte: ${horizonte} años
+- Horizonte: ${horizonte} años  
 - Riesgo: ${riesgo}
 - Objetivo: ${objetivo}
 - Restricciones: ${restricciones || "Ninguna"}
 
-Reglas:
-- Acciones chilenas líquidas (IPSA y midcaps).
-- Entre 12 y 16 acciones.
-- Diversificar por sectores. Máximo 30% por sector.
-- Lenguaje prudente y profesional.
+Construye una cartera con estas reglas:
+- 10 a 14 acciones chilenas líquidas del IPSA o midcaps conocidos
+- Máximo 25% por sector
+- Porcentajes deben sumar exactamente 100
+- Lenguaje técnico pero comprensible
 
-Responde SOLO con este JSON (sin nada más):
+Formato JSON exacto que debes retornar:
 
 {
-  "resumenEjecutivo": "string",
-  "supuestosMacro": "string",
+  "resumenEjecutivo": "string breve",
+  "supuestosMacro": "string breve",
   "asignacion": [
-    { "accion": "string", "ticker": "string", "sector": "string", "porcentaje": number, "rol": "string" }
+    { "accion": "Nombre", "ticker": "TICKER", "sector": "Sector", "porcentaje": 8, "rol": "string" }
   ],
   "asignacionSectorial": [
-    { "sector": "string", "porcentaje": number }
+    { "sector": "Sector", "porcentaje": 20 }
   ],
   "logicaCartera": [
-    { "bloque": "string", "descripcion": "string" }
+    { "bloque": "Nombre", "descripcion": "string" }
   ],
   "estimaciones": {
-    "rentabilidadEsperada": "string",
-    "volatilidad": "string",
-    "drawdown": "string"
+    "rentabilidadEsperada": "8-12% anual",
+    "volatilidad": "15-20% anual",
+    "drawdown": "-20 a -30%"
   },
-  "riesgosPrincipales": ["string"],
+  "riesgosPrincipales": ["riesgo 1", "riesgo 2", "riesgo 3"],
   "monitoreo": {
     "frecuencia": "string",
-    "queMirar": ["string"]
+    "queMirar": ["indicador 1", "indicador 2"]
   },
   "implementacion": "string"
 }`;
 }
 
 export default async function handler(req) {
+  // CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST" },
+    });
+  }
+
   if (req.method !== "POST") {
-    return jsonResponse({ ok: false, error: "Método no permitido" }, 405);
+    return jsonRes({ ok: false, error: "Método no permitido" }, 405);
   }
 
   const apiKey = process.env.ACCIONES;
   if (!apiKey) {
-    return jsonResponse({ ok: false, error: "Falta variable de entorno ACCIONES" }, 500);
+    return jsonRes({ ok: false, error: "Variable de entorno ACCIONES no configurada" }, 500);
   }
 
   let body;
   try {
     body = await req.json();
   } catch {
-    return jsonResponse({ ok: false, error: "Request body inválido" }, 400);
+    return jsonRes({ ok: false, error: "Body inválido" }, 400);
   }
 
-  const monto        = body?.monto       ?? body?.capital;
-  const horizonte    = body?.horizonte   ?? body?.horizon;
-  const riesgo       = body?.riesgo      ?? body?.risk;
-  const objetivo     = body?.objetivo    ?? body?.objective;
-  const restricciones= body?.restricciones ?? body?.constraints ?? "";
+  const monto         = body?.monto        ?? body?.capital;
+  const horizonte     = body?.horizonte    ?? body?.horizon;
+  const riesgo        = body?.riesgo       ?? body?.risk;
+  const objetivo      = body?.objetivo     ?? body?.objective;
+  const restricciones = body?.restricciones ?? body?.constraints ?? "";
 
   const missing = [["monto", monto], ["horizonte", horizonte], ["riesgo", riesgo], ["objetivo", objetivo]]
-    .filter(([, v]) => isMissing(v))
-    .map(([k]) => k);
+    .filter(([, v]) => isMissing(v)).map(([k]) => k);
 
-  if (missing.length > 0) {
-    return jsonResponse({ ok: false, error: `Faltan campos: ${missing.join(", ")}` }, 400);
+  if (missing.length) {
+    return jsonRes({ ok: false, error: `Faltan campos: ${missing.join(", ")}` }, 400);
   }
 
   const prompt = buildPrompt({ monto, horizonte, riesgo, objetivo, restricciones });
 
+  // Call OpenAI chat completions (standard, fast, compatible with edge)
   let openaiRes;
   try {
     openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
         temperature: 0.2,
-        max_tokens: 2500,
+        max_tokens: 2000,
         response_format: { type: "json_object" },
         messages: [
           {
             role: "system",
-            content: "Eres un analista financiero chileno. Responde SIEMPRE con JSON válido y nada más.",
+            content: "Eres un analista financiero chileno. Respondes SOLO con JSON válido, sin texto adicional.",
           },
           {
             role: "user",
@@ -119,43 +125,44 @@ export default async function handler(req) {
         ],
       }),
     });
-  } catch (fetchErr) {
-    return jsonResponse({ ok: false, error: `Error de red hacia OpenAI: ${fetchErr.message}` }, 502);
+  } catch (err) {
+    return jsonRes({ ok: false, error: `Error conectando con OpenAI: ${err.message}` }, 502);
   }
 
   let data;
   try {
     data = await openaiRes.json();
   } catch {
-    return jsonResponse({ ok: false, error: "OpenAI devolvió una respuesta no-JSON" }, 502);
+    return jsonRes({ ok: false, error: "OpenAI devolvió respuesta no-JSON" }, 502);
   }
 
   if (!openaiRes.ok) {
-    return jsonResponse(
-      { ok: false, error: data?.error?.message || `OpenAI error ${openaiRes.status}` },
-      openaiRes.status
-    );
+    const errMsg = data?.error?.message || `OpenAI status ${openaiRes.status}`;
+    return jsonRes({ ok: false, error: errMsg }, openaiRes.status >= 500 ? 502 : openaiRes.status);
   }
 
-  // Extract text from chat/completions format
-  const rawText = data?.choices?.[0]?.message?.content?.trim() ?? "";
+  const rawText = (data?.choices?.[0]?.message?.content ?? "").trim();
 
   if (!rawText) {
-    return jsonResponse({ ok: false, error: "El modelo no devolvió contenido" }, 502);
+    return jsonRes({ ok: false, error: "El modelo no retornó contenido" }, 502);
   }
 
-  // Strip markdown fences if present (```json ... ```)
-  const cleaned = rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  // Strip any accidental markdown fences
+  const cleaned = rawText
+    .replace(/^```(?:json)?[\r\n]*/i, "")
+    .replace(/[\r\n]*```\s*$/i, "")
+    .trim();
 
   let portfolio;
   try {
     portfolio = JSON.parse(cleaned);
   } catch {
-    return jsonResponse(
-      { ok: false, error: "No se pudo parsear el JSON del modelo", rawText: cleaned.slice(0, 500) },
-      502
-    );
+    return jsonRes({
+      ok: false,
+      error: "JSON inválido en respuesta del modelo",
+      preview: cleaned.slice(0, 200),
+    }, 502);
   }
 
-  return jsonResponse({ ok: true, data: portfolio });
+  return jsonRes({ ok: true, data: portfolio });
 }
