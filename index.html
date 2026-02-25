@@ -1,437 +1,936 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cartera Acciones Chile — MVP</title>
+    <title>Ful.cl — Simulador de Acciones Chile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
+      /* ── Tokens ── */
       :root {
-        color-scheme: light;
-        --bg: #ffffff;
-        --text: #111111;
-        --muted: #666666;
-        --border: #eaeaea;
+        --bg: #0a0e1a;
+        --bg-card: #0f1629;
+        --border: rgba(255,255,255,0.06);
+        --border-glow: rgba(0,255,163,0.2);
+        --text: #e8eaf6;
+        --text-muted: #5a6585;
+        --text-dim: #8892b0;
+        --accent: #00ffa3;
+        --accent-dim: rgba(0,255,163,0.12);
+        --accent-2: #00d4ff;
+        --accent-2-dim: rgba(0,212,255,0.12);
+        --red: #ff4560;
+        --yellow: #ffd700;
+        --mono: 'Space Mono', monospace;
+        --sans: 'DM Sans', sans-serif;
+        --shadow: 0 4px 24px rgba(0,0,0,0.4);
+        --transition: 0.25s ease;
       }
 
-      * {
-        box-sizing: border-box;
+      [data-theme="light"] {
+        --bg: #f0f4ff;
+        --bg-card: #ffffff;
+        --border: rgba(0,0,0,0.08);
+        --border-glow: rgba(0,180,120,0.25);
+        --text: #111827;
+        --text-muted: #6b7280;
+        --text-dim: #374151;
+        --accent: #00a86b;
+        --accent-dim: rgba(0,168,107,0.1);
+        --accent-2: #0091cc;
+        --accent-2-dim: rgba(0,145,204,0.1);
+        --red: #e03050;
+        --yellow: #d4900a;
+        --shadow: 0 4px 24px rgba(0,0,0,0.08);
       }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      html { transition: background var(--transition); }
 
       body {
-        margin: 0;
-        padding: 40px 20px;
         background: var(--bg);
         color: var(--text);
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-          sans-serif;
-        line-height: 1.45;
+        font-family: var(--sans);
+        min-height: 100vh;
+        overflow-x: hidden;
+        transition: background var(--transition), color var(--transition);
       }
 
-      .container {
-        max-width: 1080px;
-        margin: 0 auto;
+      /* grid bg - dark only */
+      [data-theme="dark"] body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0,255,163,0.02) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0,255,163,0.02) 1px, transparent 1px);
+        background-size: 60px 60px;
+        pointer-events: none;
+        z-index: 0;
       }
 
-      h1 {
-        margin: 0 0 24px;
-        font-size: clamp(1.4rem, 2.5vw, 2rem);
-        font-weight: 600;
-        letter-spacing: -0.02em;
+      [data-theme="dark"] body::after {
+        content: '';
+        position: fixed;
+        top: -20%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 800px;
+        height: 600px;
+        background: radial-gradient(ellipse, rgba(0,255,163,0.04) 0%, transparent 70%);
+        pointer-events: none;
+        z-index: 0;
       }
 
-      .grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 20px;
+      [data-theme="light"] body::before,
+      [data-theme="light"] body::after { display: none; }
+
+      /* ── Header ── */
+      header {
+        position: relative;
+        z-index: 10;
+        padding: 20px 40px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-card);
+        box-shadow: var(--shadow);
+        transition: background var(--transition), box-shadow var(--transition);
       }
 
-      .panel {
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 20px;
-        background: #fff;
+      .logo { display: flex; align-items: center; gap: 12px; }
+
+      .logo-icon {
+        width: 38px; height: 38px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        display: flex; align-items: center; justify-content: center;
+        color: #0a0e1a;
+        flex-shrink: 0;
       }
 
-      form {
-        display: grid;
-        gap: 14px;
+      .logo-text { font-family: var(--mono); font-size: 1.15rem; font-weight: 700; letter-spacing: 0.04em; color: var(--text); }
+      .logo-sub { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 1px; }
+
+      .header-right { display: flex; gap: 10px; align-items: center; }
+
+      .badge {
+        font-size: 0.68rem; font-family: var(--mono); padding: 5px 10px;
+        border-radius: 6px; border: 1px solid var(--border);
+        color: var(--text-muted); background: transparent; letter-spacing: 0.05em;
+        transition: border-color var(--transition), color var(--transition);
       }
 
-      label {
-        display: grid;
-        gap: 6px;
-        font-size: 0.9rem;
-        font-weight: 500;
-      }
-
-      input,
-      select,
-      textarea,
-      button {
-        width: 100%;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 12px;
-        background: #fff;
-        color: var(--text);
-        font: inherit;
-      }
-
-      textarea {
-        min-height: 92px;
-        resize: vertical;
-      }
-
-      input:focus,
-      select:focus,
-      textarea:focus,
-      button:focus {
-        outline: 2px solid #000;
-        outline-offset: 1px;
-      }
-
-      button {
+      /* ── Theme toggle ── */
+      .theme-btn {
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        padding: 0 14px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1px solid var(--accent);
+        background: var(--accent-dim);
+        color: var(--accent);
         cursor: pointer;
-        font-weight: 600;
+        transition: all 0.2s;
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
       }
 
-      button[disabled] {
-        cursor: not-allowed;
-        opacity: 0.6;
+      .theme-btn:hover { background: var(--accent); color: #0a0e1a; }
+
+      /* show/hide moon/sun per theme */
+      [data-theme="dark"]  .theme-btn .icon-moon { display: flex; align-items: center; }
+      [data-theme="dark"]  .theme-btn .icon-sun  { display: none; }
+      [data-theme="light"] .theme-btn .icon-moon { display: none; }
+      [data-theme="light"] .theme-btn .icon-sun  { display: flex; align-items: center; }
+      [data-theme="dark"]  .theme-btn .theme-label::before { content: "Modo Día"; }
+      [data-theme="light"] .theme-btn .theme-label::before { content: "Modo Noche"; }
+
+      /* ── Main layout ── */
+      main {
+        position: relative;
+        z-index: 10;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 32px 40px 60px;
+        display: grid;
+        grid-template-columns: 400px 1fr;
+        gap: 24px;
+        align-items: start;
       }
 
-      .status {
-        min-height: 20px;
-        margin: 8px 0 0;
-        font-size: 0.85rem;
+      /* ── Form panel ── */
+      .form-panel {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 28px;
+        position: sticky;
+        top: 24px;
+        animation: fadeInUp 0.5s ease both;
+        box-shadow: var(--shadow);
+        transition: background var(--transition), border-color var(--transition), box-shadow var(--transition);
       }
 
-      .status.error {
-        color: #000;
-        font-weight: 600;
+      .panel-header {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 24px; padding-bottom: 16px;
+        border-bottom: 1px solid var(--border);
       }
 
-      .output-box {
-        margin: 0;
-        min-height: 420px;
+      .panel-title {
+        font-size: 0.78rem; font-family: var(--mono);
+        text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);
+        display: flex; align-items: center; gap: 8px;
+      }
+
+      form { display: flex; flex-direction: column; gap: 18px; }
+
+      .field { display: flex; flex-direction: column; gap: 8px; }
+
+      .field-label {
+        font-size: 0.71rem; font-family: var(--mono);
+        letter-spacing: 0.08em; text-transform: uppercase;
+        color: var(--text-muted);
+        display: flex; align-items: center; gap: 6px;
+      }
+      .field-label .req { color: var(--accent); font-size: 0.55rem; }
+
+      .input-wrap { position: relative; }
+
+      .input-prefix {
+        position: absolute; left: 14px; top: 50%;
+        transform: translateY(-50%);
+        font-family: var(--mono); font-size: 0.72rem;
+        color: var(--text-muted);
+        pointer-events: none; z-index: 1;
+      }
+
+      .input-icon {
+        position: absolute; left: 12px; top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        pointer-events: none; z-index: 1;
+        display: flex; align-items: center;
+      }
+
+      input, select, textarea {
+        width: 100%;
+        background: rgba(128,128,128,0.05);
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 16px;
-        overflow-x: auto;
+        padding: 12px 14px;
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 0.9rem;
+        transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+        appearance: none; -webkit-appearance: none;
       }
 
-      .section {
-        margin-top: 28px;
-        padding-top: 12px;
-        border-top: 1px solid #e5e5e5;
+      input.has-prefix { padding-left: 44px; }
+      input.has-icon { padding-left: 38px; }
+
+      input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        background: var(--accent-dim);
+        box-shadow: 0 0 0 3px rgba(0,255,163,0.08);
       }
 
-      .section-title {
-        font-weight: 600;
-        margin-bottom: 8px;
+      [data-theme="light"] input:focus,
+      [data-theme="light"] select:focus,
+      [data-theme="light"] textarea:focus {
+        box-shadow: 0 0 0 3px rgba(0,168,107,0.12);
       }
 
-      p,
-      li,
-      td,
-      th {
-        font-size: 0.92rem;
-      }
+      input::placeholder { color: var(--text-muted); }
+      select option { background: var(--bg-card); color: var(--text); }
+      textarea { min-height: 80px; resize: none; }
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
+      /* ── Risk buttons ── */
+      .risk-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 
-      th,
-      td {
+      .risk-btn {
+        padding: 10px 4px; border-radius: 10px;
         border: 1px solid var(--border);
-        text-align: left;
-        padding: 8px;
-        vertical-align: top;
+        background: transparent;
+        cursor: pointer; text-align: center;
+        transition: all 0.15s;
+        display: flex; flex-direction: column; align-items: center; gap: 5px;
+        color: var(--text-muted);
+      }
+      .risk-btn .r-icon { display: flex; align-items: center; justify-content: center; }
+      .risk-btn .label { font-size: 0.63rem; font-family: var(--mono); }
+
+      .risk-btn[data-level="Bajo"].active   { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+      .risk-btn[data-level="Medio"].active  { border-color: var(--accent-2); background: var(--accent-2-dim); color: var(--accent-2); }
+      .risk-btn[data-level="Medio-Alto"].active { border-color: var(--yellow); background: rgba(255,215,0,0.08); color: var(--yellow); }
+      .risk-btn[data-level="Alto"].active   { border-color: var(--red); background: rgba(255,69,96,0.08); color: var(--red); }
+      .risk-btn:hover:not(.active) { border-color: rgba(128,128,128,0.2); background: rgba(128,128,128,0.05); }
+
+      .risk-btn[data-level="Bajo"]:not(.active) .label   { color: var(--accent); }
+      .risk-btn[data-level="Medio"]:not(.active) .label  { color: var(--accent-2); }
+      .risk-btn[data-level="Medio-Alto"]:not(.active) .label { color: var(--yellow); }
+      .risk-btn[data-level="Alto"]:not(.active) .label   { color: var(--red); }
+
+      /* ── Range ── */
+      .range-wrap { position: relative; padding-top: 30px; }
+      .range-value {
+        position: absolute; right: 0; top: 0;
+        font-family: var(--mono); font-size: 0.85rem; color: var(--accent);
+        background: var(--accent-dim);
+        padding: 2px 8px; border-radius: 6px;
+      }
+      .range-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.63rem; font-family: var(--mono); color: var(--text-muted); }
+
+      input[type="range"] { padding: 0; height: 6px; background: transparent; cursor: pointer; }
+      input[type="range"]::-webkit-slider-track { height: 6px; border-radius: 4px; background: rgba(128,128,128,0.12); border: none; }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none; width: 18px; height: 18px;
+        border-radius: 50%; background: var(--accent);
+        border: 3px solid var(--bg-card);
+        box-shadow: 0 0 8px rgba(0,255,163,0.4);
+        margin-top: -6px; cursor: pointer;
+      }
+      input[type="range"]:focus { outline: none; box-shadow: none; }
+
+      /* ── Amount chips ── */
+      .amount-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+      .chip {
+        font-size: 0.67rem; font-family: var(--mono);
+        padding: 4px 10px; border-radius: 20px;
+        border: 1px solid var(--border); color: var(--text-muted);
+        cursor: pointer; transition: all 0.15s; background: transparent;
+      }
+      .chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+      /* ── Submit ── */
+      .submit-btn {
+        width: 100%; padding: 14px; border: none; border-radius: 12px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: #0a0e1a; font-family: var(--mono); font-size: 0.85rem; font-weight: 700;
+        letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+        transition: all 0.2s; position: relative; overflow: hidden; margin-top: 4px;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+      }
+      .submit-btn::after {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%);
+        transform: translateX(-100%); transition: transform 0.4s;
+      }
+      .submit-btn:hover:not(:disabled)::after { transform: translateX(100%); }
+      .submit-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,255,163,0.25); }
+      .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      .spinner {
+        width: 16px; height: 16px;
+        border: 2px solid rgba(10,14,26,0.3);
+        border-top-color: rgba(10,14,26,0.9);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        display: none; flex-shrink: 0;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      .status-msg { text-align: center; font-size: 0.73rem; font-family: var(--mono); color: var(--text-muted); min-height: 18px; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+      .status-msg.error { color: var(--red); }
+      .status-msg.ok    { color: var(--accent); }
+
+      /* ── Output ── */
+      .output-panel { animation: fadeInUp 0.5s ease 0.1s both; }
+
+      .empty-state {
+        background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: 20px; padding: 64px 32px;
+        text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px;
+        box-shadow: var(--shadow);
+        transition: background var(--transition);
       }
 
-      th {
-        font-weight: 600;
+      .empty-icon {
+        width: 72px; height: 72px; border-radius: 50%;
+        background: var(--accent-dim);
+        border: 1px solid var(--border-glow);
+        display: flex; align-items: center; justify-content: center;
+        color: var(--accent);
+        margin-bottom: 8px;
+        animation: pulseGlow 3s ease-in-out infinite;
       }
+      @keyframes pulseGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(0,255,163,0.1); } 50% { box-shadow: 0 0 0 12px rgba(0,255,163,0); } }
 
-      ol {
-        margin: 0;
-        padding-left: 20px;
+      .empty-title { font-family: var(--mono); font-size: 1rem; color: var(--text-dim); }
+      .empty-sub { font-size: 0.82rem; color: var(--text-muted); max-width: 320px; line-height: 1.6; }
+
+      /* ── Loading ── */
+      .loading-state {
+        background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: 20px; padding: 60px 32px;
+        text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px;
+        box-shadow: var(--shadow);
       }
+      .loading-rings { position: relative; width: 80px; height: 80px; }
+      .loading-rings span { position: absolute; border-radius: 50%; border: 2px solid transparent; animation: ringPulse 2s ease-in-out infinite; }
+      .loading-rings span:nth-child(1) { inset: 0; border-top-color: var(--accent); animation-duration: 1.5s; }
+      .loading-rings span:nth-child(2) { inset: 14px; border-right-color: var(--accent-2); animation-direction: reverse; animation-duration: 2s; }
+      .loading-rings span:nth-child(3) { inset: 28px; border-bottom-color: var(--yellow); animation-duration: 2.5s; }
+      @keyframes ringPulse { to { transform: rotate(360deg); } }
+      .loading-text { font-family: var(--mono); font-size: 0.78rem; color: var(--text-muted); letter-spacing: 0.08em; }
+      .loading-steps { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 280px; }
+      .loading-step { display: flex; align-items: center; gap: 10px; font-size: 0.75rem; color: var(--text-muted); padding: 8px 12px; border-radius: 8px; background: rgba(128,128,128,0.04); opacity: 0; animation: stepReveal 0.4s ease forwards; }
+      .loading-step:nth-child(1) { animation-delay: 0.3s; }
+      .loading-step:nth-child(2) { animation-delay: 1.2s; }
+      .loading-step:nth-child(3) { animation-delay: 2.4s; }
+      @keyframes stepReveal { to { opacity: 1; } }
+      .step-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; animation: dotPulse 1s ease-in-out infinite; }
+      @keyframes dotPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
 
-      .muted {
-        color: var(--muted);
+      /* ── Result cards ── */
+      .result-container { display: flex; flex-direction: column; gap: 16px; }
+
+      .stats-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      .stat-card {
+        background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: 16px; padding: 16px 20px;
+        animation: fadeInUp 0.4s ease both;
+        box-shadow: var(--shadow);
+        transition: background var(--transition), border-color var(--transition);
       }
+      .stat-card:nth-child(1) { animation-delay: 0.05s; }
+      .stat-card:nth-child(2) { animation-delay: 0.10s; }
+      .stat-card:nth-child(3) { animation-delay: 0.15s; }
+      .stat-label { font-size: 0.63rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 6px; }
+      .stat-value { font-family: var(--mono); font-size: 1.05rem; color: var(--accent); font-weight: 700; }
+      .stat-value.blue   { color: var(--accent-2); }
+      .stat-value.yellow { color: var(--yellow); }
 
-      .disclaimer {
-        margin: 12px 0 0;
-        font-size: 0.8rem;
-        color: var(--muted);
+      .section-card {
+        background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: 20px; overflow: hidden;
+        animation: fadeInUp 0.4s ease both;
+        box-shadow: var(--shadow);
+        transition: background var(--transition), border-color var(--transition);
       }
+      .section-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 15px 20px; border-bottom: 1px solid var(--border);
+        cursor: pointer; user-select: none; transition: background 0.15s;
+      }
+      .section-head:hover { background: rgba(128,128,128,0.04); }
+      .section-head-left { display: flex; align-items: center; gap: 10px; }
 
-      @media (max-width: 840px) {
-        body {
-          padding: 24px 14px;
-        }
+      .section-tag {
+        font-size: 0.63rem; font-family: var(--mono); text-transform: uppercase;
+        letter-spacing: 0.1em; padding: 3px 8px; border-radius: 6px;
+        background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,255,163,0.15);
+      }
+      .section-tag.blue   { background: var(--accent-2-dim); color: var(--accent-2); border-color: rgba(0,212,255,0.15); }
+      .section-tag.yellow { background: rgba(255,215,0,0.08); color: var(--yellow); border-color: rgba(255,215,0,0.15); }
+      .section-tag.red    { background: rgba(255,69,96,0.08); color: var(--red); border-color: rgba(255,69,96,0.15); }
 
-        .grid {
-          grid-template-columns: 1fr;
-        }
+      .section-title-text { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+      .section-chevron { color: var(--text-muted); transition: transform 0.2s; display: flex; align-items: center; }
+      .section-body { padding: 20px; }
+      .section-text { font-size: 0.87rem; line-height: 1.7; color: var(--text-dim); }
 
-        .output-box {
-          min-height: 320px;
-        }
+      /* ── Alloc table ── */
+      .alloc-table { width: 100%; border-collapse: collapse; }
+      .alloc-table thead tr { border-bottom: 1px solid var(--border); }
+      .alloc-table th { font-family: var(--mono); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); padding: 0 12px 12px; text-align: left; font-weight: 400; }
+      .alloc-table th:nth-child(4) { text-align: right; }
+      .alloc-table td { padding: 11px 12px; font-size: 0.84rem; border-bottom: 1px solid rgba(128,128,128,0.06); vertical-align: middle; }
+      .alloc-table tbody tr { transition: background 0.15s; }
+      .alloc-table tbody tr:hover { background: rgba(128,128,128,0.04); }
+      .alloc-table tbody tr:last-child td { border-bottom: none; }
+
+      .ticker-badge { display: inline-block; font-family: var(--mono); font-size: 0.73rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: rgba(128,128,128,0.08); border: 1px solid rgba(128,128,128,0.12); color: var(--accent-2); letter-spacing: 0.05em; }
+
+      .pct-bar-wrap { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+      .pct-track { width: 80px; height: 4px; border-radius: 4px; background: rgba(128,128,128,0.1); overflow: hidden; }
+      .pct-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); width: 0; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+      .pct-val { font-family: var(--mono); font-size: 0.8rem; min-width: 38px; text-align: right; color: var(--accent); }
+      .rol-text { font-size: 0.74rem; color: var(--text-muted); max-width: 180px; }
+
+      /* ── Sector chart ── */
+      .sector-layout { display: grid; grid-template-columns: 160px 1fr; gap: 24px; align-items: center; }
+      .donut-wrap { position: relative; width: 140px; height: 140px; }
+      .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--mono); }
+      .donut-center .num { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+      .donut-center .lbl { font-size: 0.58rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+      .sector-list { display: flex; flex-direction: column; gap: 10px; }
+      .sector-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; }
+      .sector-name-wrap { display: flex; align-items: center; gap: 8px; }
+      .sector-color-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+      .sector-name { font-size: 0.82rem; color: var(--text-dim); }
+      .sector-pct { font-family: var(--mono); font-size: 0.78rem; color: var(--text); }
+      .sector-bar-full { grid-column: 1 / -1; height: 3px; border-radius: 3px; background: rgba(128,128,128,0.08); margin-top: -4px; overflow: hidden; }
+      .sector-bar-fill { height: 100%; border-radius: 3px; width: 0; transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
+
+      /* ── Est / Logic / Risk ── */
+      .est-card { background: rgba(128,128,128,0.04); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+      .est-icon { color: var(--text-muted); display: flex; }
+      .est-label { font-size: 0.63rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+      .est-val { font-size: 0.9rem; color: var(--text); font-weight: 500; }
+
+      .risks-list { display: flex; flex-direction: column; gap: 8px; }
+      .risk-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 10px; background: rgba(255,69,96,0.04); border: 1px solid rgba(255,69,96,0.08); font-size: 0.83rem; color: var(--text-dim); line-height: 1.5; animation: fadeInLeft 0.3s ease both; }
+      .risk-num { font-family: var(--mono); font-size: 0.68rem; color: var(--red); background: rgba(255,69,96,0.1); border-radius: 4px; padding: 2px 6px; flex-shrink: 0; margin-top: 1px; }
+
+      .logic-items { display: flex; flex-direction: column; gap: 12px; }
+      .logic-item { padding: 14px 16px; border-radius: 12px; background: var(--accent-dim); border: 1px solid rgba(0,255,163,0.1); }
+      .logic-item-title { font-size: 0.76rem; font-family: var(--mono); color: var(--accent); font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+      .logic-item-desc { font-size: 0.83rem; color: var(--text-dim); line-height: 1.6; }
+
+      .monitor-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 4px; }
+      .monitor-item { display: flex; align-items: center; gap: 8px; font-size: 0.79rem; color: var(--text-dim); padding: 10px 12px; border-radius: 10px; background: rgba(128,128,128,0.04); border: 1px solid var(--border); }
+      .monitor-item-arrow { color: var(--accent-2); display: flex; flex-shrink: 0; }
+
+      .impl-box { background: linear-gradient(135deg, var(--accent-dim), var(--accent-2-dim)); border: 1px solid rgba(0,255,163,0.1); border-radius: 14px; padding: 18px 20px; font-size: 0.87rem; color: var(--text-dim); line-height: 1.7; }
+
+      .disclaimer { background: rgba(255,69,96,0.04); border: 1px solid rgba(255,69,96,0.1); border-radius: 12px; padding: 12px 16px; font-size: 0.7rem; color: var(--text-muted); text-align: center; font-family: var(--mono); letter-spacing: 0.02em; display: flex; align-items: center; justify-content: center; gap: 8px; }
+      .disclaimer-icon { color: var(--red); display: flex; flex-shrink: 0; }
+
+      @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes fadeInLeft { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+
+      @media (max-width: 1024px) {
+        main { grid-template-columns: 1fr; padding: 20px 20px 40px; }
+        .form-panel { position: static; }
+        header { padding: 16px 20px; }
+        .stats-bar { grid-template-columns: repeat(3, 1fr); }
+        .sector-layout { grid-template-columns: 1fr; }
+        .donut-wrap { margin: 0 auto; }
+      }
+      @media (max-width: 640px) {
+        .stats-bar { grid-template-columns: 1fr 1fr; }
+        .monitor-grid { grid-template-columns: 1fr; }
+        .header-right .badge { display: none; }
       }
     </style>
   </head>
   <body>
-    <main class="container">
-      <h1>Cartera Acciones Chile — MVP</h1>
+    <header>
+      <div class="logo">
+        <div class="logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <div>
+          <div class="logo-text">Ful.cl</div>
+          <div class="logo-sub">Simulador Acciones — Mercado Chileno</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <span class="badge">IPSA · Midcaps</span>
+        <span class="badge">IA · GPT-4o</span>
+        <button class="theme-btn" id="themeBtn" aria-label="Alternar modo día/noche">
+          <span class="icon-moon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </span>
+          <span class="icon-sun">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </span>
+          <span class="theme-label"></span>
+        </button>
+      </div>
+    </header>
 
-      <section class="grid">
-        <article class="panel">
-          <form id="portfolioForm">
-            <label>
-              Capital (CLP)
-              <input id="capital" name="capital" type="number" min="1" step="1" required />
+    <main>
+      <!-- Form -->
+      <div class="form-panel">
+        <div class="panel-header">
+          <span class="panel-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="4" x2="14" y2="4"/><line x1="10" y1="4" x2="3" y2="4"/><line x1="21" y1="12" x2="12" y2="12"/><line x1="8" y1="12" x2="3" y2="12"/><line x1="21" y1="20" x2="16" y2="20"/><line x1="12" y1="20" x2="3" y2="20"/><circle cx="12" cy="4" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="14" cy="20" r="2"/></svg>
+            Configurar cartera
+          </span>
+        </div>
+        <form id="portfolioForm" novalidate>
+
+          <!-- Capital -->
+          <div class="field">
+            <label class="field-label" for="capital">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+              Capital disponible <span class="req">●</span>
             </label>
+            <div class="input-wrap">
+              <span class="input-prefix">CLP</span>
+              <input id="capital" name="capital" type="number" class="has-prefix" min="1" step="1000" placeholder="10,000,000" required />
+            </div>
+            <div class="amount-chips">
+              <button type="button" class="chip" data-amount="5000000">$5M</button>
+              <button type="button" class="chip" data-amount="10000000">$10M</button>
+              <button type="button" class="chip" data-amount="25000000">$25M</button>
+              <button type="button" class="chip" data-amount="50000000">$50M</button>
+              <button type="button" class="chip" data-amount="100000000">$100M</button>
+            </div>
+          </div>
 
-            <label>
-              Horizonte de inversión (años)
-              <input id="horizon" name="horizon" type="number" min="1" step="1" required />
+          <!-- Horizonte -->
+          <div class="field">
+            <label class="field-label" for="horizon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>
+              Horizonte de inversión <span class="req">●</span>
             </label>
+            <div class="range-wrap">
+              <span class="range-value" id="horizonDisplay">5 años</span>
+              <input id="horizon" name="horizon" type="range" min="1" max="20" value="5" step="1" required />
+              <div class="range-labels">
+                <span>1</span><span>5</span><span>10</span><span>15</span><span>20 años</span>
+              </div>
+            </div>
+          </div>
 
-            <label>
-              Nivel de riesgo
-              <select id="risk" name="risk" required>
-                <option value="">Selecciona nivel</option>
-                <option value="Bajo">Bajo</option>
-                <option value="Medio">Medio</option>
-                <option value="Medio-Alto">Medio-Alto</option>
-                <option value="Alto">Alto</option>
-              </select>
+          <!-- Riesgo -->
+          <div class="field">
+            <label class="field-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M4.22 10.22a8 8 0 0 1 15.56 0"/><path d="M1 13h2M21 13h2M3.64 19.36l1.42-1.42M18.94 17.94l1.42 1.42"/></svg>
+              Nivel de riesgo <span class="req">●</span>
             </label>
+            <div class="risk-grid">
+              <button type="button" class="risk-btn" data-level="Bajo">
+                <span class="r-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+                <span class="label">Bajo</span>
+              </button>
+              <button type="button" class="risk-btn" data-level="Medio">
+                <span class="r-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="3" x2="12" y2="21"/><path d="M3 6l9 3 9-3"/><path d="M3 18l9-3 9 3"/><line x1="3" y1="6" x2="3" y2="18"/><line x1="21" y1="6" x2="21" y2="18"/></svg></span>
+                <span class="label">Medio</span>
+              </button>
+              <button type="button" class="risk-btn active" data-level="Medio-Alto">
+                <span class="r-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+                <span class="label">Medio-Alto</span>
+              </button>
+              <button type="button" class="risk-btn" data-level="Alto">
+                <span class="r-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+                <span class="label">Alto</span>
+              </button>
+            </div>
+            <input type="hidden" id="risk" name="risk" value="Medio-Alto" />
+          </div>
 
-            <label>
-              Objetivo
-              <input id="objective" name="objective" type="text" maxlength="200" required />
+          <!-- Objetivo -->
+          <div class="field">
+            <label class="field-label" for="objective">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+              Objetivo de inversión <span class="req">●</span>
             </label>
+            <div class="input-wrap">
+              <span class="input-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></span>
+              <input id="objective" name="objective" type="text" class="has-icon" maxlength="200" placeholder="Ej: crecimiento de capital a largo plazo" required />
+            </div>
+          </div>
 
-            <label>
-              Restricciones opcionales
-              <textarea id="constraints" name="constraints" maxlength="800"></textarea>
+          <!-- Restricciones -->
+          <div class="field">
+            <label class="field-label" for="constraints">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              Restricciones / preferencias
             </label>
+            <textarea id="constraints" name="constraints" maxlength="800" placeholder="Ej: evitar sector bancario, preferir empresas con dividendos..."></textarea>
+          </div>
 
-            <button id="submitBtn" type="submit">Generar cartera</button>
-            <p id="status" class="status" role="status" aria-live="polite"></p>
-          </form>
-        </article>
+          <button class="submit-btn" id="submitBtn" type="submit">
+            <span class="spinner" id="spinner"></span>
+            <svg id="btnIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+            <span id="btnText">Generar Cartera</span>
+          </button>
 
-        <article class="panel">
-          <div id="output" class="output-box">Completa el formulario para generar una simulación.</div>
-          <p class="disclaimer">Simulación educativa. No es asesoría financiera.</p>
-        </article>
-      </section>
+          <div id="statusMsg" class="status-msg"></div>
+        </form>
+      </div>
+
+      <!-- Output -->
+      <div class="output-panel" id="outputPanel">
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>
+          </div>
+          <div class="empty-title">Tu cartera aparecerá aquí</div>
+          <div class="empty-sub">Configura tu perfil de inversión y genera una simulación personalizada basada en el mercado accionario chileno.</div>
+        </div>
+      </div>
     </main>
 
     <script>
-      const form = document.getElementById("portfolioForm");
-      const button = document.getElementById("submitBtn");
-      const statusEl = document.getElementById("status");
-      const outputEl = document.getElementById("output");
+      const $ = id => document.getElementById(id);
+      const html = document.documentElement;
+
+      // ── Inline SVG icons (no CDN needed) ──
+      const SVG = {
+        chevronDown: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
+        chevronRight: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',
+        trendingUp: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+        trendingDown: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>',
+        activity: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+        alertTriangle: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        alertCircle: '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+        checkCircle: '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+        xCircle: '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+        wifiOff: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>',
+      };
 
 
-      function escapeHtml(value) {
-        return String(value)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/\"/g, "&quot;")
-          .replace(/'/g, "&#39;");
+      // ── Theme ──
+      const themeBtn = $('themeBtn');
+      const savedTheme = localStorage.getItem('fulcl-theme') || 'dark';
+      html.setAttribute('data-theme', savedTheme);
+
+      themeBtn.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fulcl-theme', next);
+      });
+
+      // ── Horizon slider ──
+      const horizonInput = $('horizon');
+      const horizonDisplay = $('horizonDisplay');
+      horizonInput.addEventListener('input', () => {
+        const v = horizonInput.value;
+        horizonDisplay.textContent = v + ' ' + (v == 1 ? 'año' : 'años');
+        const pct = ((v - 1) / 19) * 100;
+        horizonInput.style.background = 'linear-gradient(90deg, var(--accent) ' + pct + '%, rgba(128,128,128,0.12) ' + pct + '%)';
+      });
+      horizonInput.dispatchEvent(new Event('input'));
+
+      // ── Amount chips ──
+      document.querySelectorAll('.chip[data-amount]').forEach(chip => {
+        chip.addEventListener('click', () => { $('capital').value = chip.dataset.amount; });
+      });
+
+      // ── Risk buttons ──
+      const riskHidden = $('risk');
+      document.querySelectorAll('.risk-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.risk-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          riskHidden.value = btn.dataset.level;
+        });
+      });
+
+      // ── Utilities ──
+      function esc(v) {
+        return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      }
+      function fmtCLP(num) {
+        return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(num);
       }
 
-      function renderPortfolio(portfolio) {
-        const data = portfolio || {};
-        const asignacion = Array.isArray(data?.asignacion) ? data.asignacion : [];
-        const logicaCartera = Array.isArray(data?.logicaCartera) ? data.logicaCartera : [];
-        const asignacionSectorial = Array.isArray(data?.asignacionSectorial)
-          ? data.asignacionSectorial
-          : [];
-        const riesgosPrincipales = Array.isArray(data?.riesgosPrincipales) ? data.riesgosPrincipales : [];
-        const monitoreo = data?.monitoreo || {};
-        const estimaciones = data?.estimaciones || {};
+      const SECTOR_COLORS = ['#00ffa3','#00d4ff','#ffd700','#ff6b35','#a78bfa','#fb7185','#34d399','#60a5fa','#f59e0b','#ec4899'];
 
-        const rows = asignacion
-          .map((item) => {
-            const porcentaje = Number(item?.porcentaje);
-            return `
-              <tr>
-                <td>${escapeHtml(item?.accion ?? "-")}</td>
-                <td>${escapeHtml(item?.ticker ?? "-")}</td>
-                <td>${escapeHtml(item?.sector ?? "-")}</td>
-                <td>${Number.isFinite(porcentaje) ? `${porcentaje}%` : "-"}</td>
-                <td>${escapeHtml(item?.rol ?? "-")}</td>
-              </tr>
-            `;
-          })
-          .join("");
-
-        let html = "";
-
-        html += `
-<div class="section">
-  <div class="section-title">Resumen ejecutivo</div>
-  <p>${escapeHtml(data.resumenEjecutivo || "No se recibió resumen ejecutivo.")}</p>
-</div>
-
-<div class="section">
-  <div class="section-title">Supuestos macro</div>
-  <p>${escapeHtml(data.supuestosMacro || "No se recibieron supuestos macro.")}</p>
-</div>
-`;
-
-        html += `
-<div class="section">
-  <div class="section-title">Asignación</div>
-  ${
-    asignacion.length
-      ? `
-        <table>
-          <thead>
-            <tr>
-              <th>Acción</th>
-              <th>Ticker</th>
-              <th>Sector</th>
-              <th>%</th>
-              <th>Rol</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      `
-      : '<p class="muted">No se recibió una asignación válida para mostrar.</p>'
-  }
-</div>
-`;
-
-        html += `<div class="section">
-<div class="section-title">Lógica de la cartera</div>`;
-
-        if (logicaCartera.length) {
-          logicaCartera.forEach((b) => {
-            html += `<p><strong>${escapeHtml(b?.bloque ?? "-")}</strong><br>${escapeHtml(
-              b?.descripcion ?? "-"
-            )}</p>`;
-          });
-        } else {
-          html += `<p class="muted">No se recibió una lógica de cartera detallada.</p>`;
-        }
-
-        html += `</div>`;
-
-        html += `<div class="section">
-<div class="section-title">Asignación por sector</div>
-<ul>`;
-
-        if (asignacionSectorial.length) {
-          asignacionSectorial.forEach((s) => {
-            html += `<li>${escapeHtml(s?.sector ?? "-")}: ${escapeHtml(s?.porcentaje ?? "-")}%</li>`;
-          });
-        } else {
-          html += `<li class="muted">No se recibió asignación sectorial.</li>`;
-        }
-
-        html += `</ul></div>`;
-
-        html += `<div class="section">
-<div class="section-title">Estimaciones</div>
-<p><strong>Rentabilidad esperada:</strong> ${escapeHtml(
-          estimaciones?.rentabilidadEsperada || "No disponible"
-        )}</p>
-<p><strong>Volatilidad:</strong> ${escapeHtml(estimaciones?.volatilidad || "No disponible")}</p>
-<p><strong>Drawdown:</strong> ${escapeHtml(estimaciones?.drawdown || "No disponible")}</p>
-</div>`;
-
-        html += `<div class="section">
-<div class="section-title">Riesgos principales</div>
-<ol>`;
-
-        if (riesgosPrincipales.length) {
-          riesgosPrincipales.forEach((r) => {
-            html += `<li>${escapeHtml(r)}</li>`;
-          });
-        } else {
-          html += `<li class="muted">No se recibieron riesgos principales.</li>`;
-        }
-
-        html += `</ol></div>`;
-
-        html += `<div class="section">
-<div class="section-title">Monitoreo</div>
-<p><strong>Frecuencia:</strong> ${escapeHtml(monitoreo?.frecuencia || "No disponible")}</p>
-<p><strong>Qué mirar:</strong></p>
-<ul>`;
-
-        if (Array.isArray(monitoreo?.queMirar) && monitoreo.queMirar.length) {
-          monitoreo.queMirar.forEach((indicador) => {
-            html += `<li>${escapeHtml(indicador)}</li>`;
-          });
-        } else {
-          html += `<li class="muted">No se recibieron indicadores de seguimiento.</li>`;
-        }
-
-        html += `</ul></div>`;
-
-        html += `
-<div class="section">
-  <div class="section-title">Sugerencia de implementación</div>
-  <p>${escapeHtml(data.implementacion || "No se recibió una guía de implementación.")}</p>
-</div>
-`;
-
-        outputEl.innerHTML = html;
+      function buildDonut(sectors) {
+        if (!sectors.length) return '<svg width="140" height="140"><circle cx="70" cy="70" r="52" fill="none" stroke="rgba(128,128,128,0.1)" stroke-width="18"/></svg>';
+        const r = 52, cx = 70, cy = 70, circ = 2 * Math.PI * r;
+        const total = sectors.reduce((s, x) => s + (Number(x.porcentaje) || 0), 0) || 100;
+        let offset = 0;
+        const paths = sectors.map((s, i) => {
+          const pct = (Number(s.porcentaje) || 0) / total;
+          const dash = pct * circ, gap = circ - dash;
+          const p = '<circle cx="70" cy="70" r="52" fill="none" stroke="' + SECTOR_COLORS[i % SECTOR_COLORS.length] + '" stroke-width="18" stroke-dasharray="' + dash + ' ' + gap + '" stroke-dashoffset="' + (-offset * circ) + '" />';
+          offset += pct;
+          return p;
+        }).join('');
+        return '<svg width="140" height="140" style="transform:rotate(-90deg)">' + paths + '</svg>';
       }
 
-      form.addEventListener("submit", async (event) => {
-        event.preventDefault();
+      function toggleSection(head) {
+        const body = head.nextElementSibling;
+        const chevron = head.querySelector('.section-chevron');
+        const isOpen = body.style.display !== 'none';
+        body.style.display = isOpen ? 'none' : '';
+        chevron.style.transform = isOpen ? 'rotate(-90deg)' : '';
+      }
 
-        const payload = {
-          capital: form.capital.value.trim(),
-          horizon: form.horizon.value.trim(),
-          risk: form.risk.value,
-          objective: form.objective.value.trim(),
-          constraints: form.constraints.value.trim(),
-        };
+      function renderPortfolio(data) {
+        const panel = $('outputPanel');
+        const asignacion = Array.isArray(data.asignacion) ? data.asignacion : [];
+        const asignacionSectorial = Array.isArray(data.asignacionSectorial) ? data.asignacionSectorial : [];
+        const logicaCartera = Array.isArray(data.logicaCartera) ? data.logicaCartera : [];
+        const riesgosPrincipales = Array.isArray(data.riesgosPrincipales) ? data.riesgosPrincipales : [];
+        const monitoreo = data.monitoreo || {};
+        const estimaciones = data.estimaciones || {};
+        const capitalVal = Number($('capital').value) || 0;
 
-        button.disabled = true;
-        button.textContent = "Generando...";
-        statusEl.className = "status";
-        statusEl.textContent = "Consultando simulación...";
-        outputEl.textContent = "Cargando resultado...";
+        const tableRows = asignacion.map(item => {
+          const pct = Number(item.porcentaje) || 0;
+          return '<tr>'
+            + '<td><span style="font-weight:500;color:var(--text)">' + esc(item.accion) + '</span></td>'
+            + '<td><span class="ticker-badge">' + esc(item.ticker) + '</span></td>'
+            + '<td><span style="font-size:0.82rem;color:var(--text-dim)">' + esc(item.sector) + '</span></td>'
+            + '<td><div class="pct-bar-wrap"><div class="pct-track"><div class="pct-fill" data-pct="' + pct + '"></div></div><span class="pct-val">' + pct + '%</span></div></td>'
+            + '<td><span class="rol-text">' + esc(item.rol) + '</span></td>'
+            + '</tr>';
+        }).join('');
+
+        const sectorListHTML = asignacionSectorial.map((s, i) => {
+          const color = SECTOR_COLORS[i % SECTOR_COLORS.length];
+          const pct = Number(s.porcentaje) || 0;
+          return '<div class="sector-row">'
+            + '<div class="sector-name-wrap"><div class="sector-color-dot" style="background:' + color + '"></div><span class="sector-name">' + esc(s.sector) + '</span></div>'
+            + '<span class="sector-pct">' + pct + '%</span>'
+            + '<div class="sector-bar-full"><div class="sector-bar-fill" style="background:' + color + '" data-pct="' + pct + '"></div></div>'
+            + '</div>';
+        }).join('');
+
+        const logicHTML = logicaCartera.map(b =>
+          '<div class="logic-item"><div class="logic-item-title">' + esc(b.bloque) + '</div><div class="logic-item-desc">' + esc(b.descripcion) + '</div></div>'
+        ).join('');
+
+        const risksHTML = riesgosPrincipales.map((r, i) =>
+          '<div class="risk-item" style="animation-delay:' + (i * 0.05) + 's"><span class="risk-num">' + String(i+1).padStart(2,'0') + '</span><span>' + esc(r) + '</span></div>'
+        ).join('');
+
+        const monitorItemsHTML = Array.isArray(monitoreo.queMirar)
+          ? monitoreo.queMirar.map(q => '<div class="monitor-item"><span class="monitor-item-arrow">' + SVG.chevronRight + '</span>' + esc(q) + '</div>').join('')
+          : '';
+
+        panel.innerHTML = '<div class="result-container">'
+
+          // Stats
+          + '<div class="stats-bar">'
+          + '<div class="stat-card"><div class="stat-label">Capital simulado</div><div class="stat-value">' + (capitalVal > 0 ? fmtCLP(capitalVal) : '—') + '</div></div>'
+          + '<div class="stat-card"><div class="stat-label">Rentabilidad esperada</div><div class="stat-value blue">' + esc(estimaciones.rentabilidadEsperada || '—') + '</div></div>'
+          + '<div class="stat-card"><div class="stat-label">Volatilidad estimada</div><div class="stat-value yellow">' + esc(estimaciones.volatilidad || '—') + '</div></div>'
+          + '</div>'
+
+          // Resumen
+          + '<div class="section-card">'
+          + '<div class="section-head" onclick="toggleSection(this)"><div class="section-head-left"><span class="section-tag">Resumen</span><span class="section-title-text">Estrategia & Supuestos Macro</span></div><span class="section-chevron">" + SVG.chevronDown + "</span></div>'
+          + '<div class="section-body"><div class="section-text" style="margin-bottom:14px">' + esc(data.resumenEjecutivo || '') + '</div>'
+          + '<div style="padding:14px 16px;border-radius:12px;background:var(--accent-2-dim);border:1px solid rgba(0,212,255,0.1)">'
+          + '<div style="font-size:0.63rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.08em;color:var(--accent-2);margin-bottom:6px">Supuestos Macro</div>'
+          + '<div class="section-text">' + esc(data.supuestosMacro || '') + '</div></div>'
+          + '</div></div>'
+
+          // Allocation
+          + '<div class="section-card">'
+          + '<div class="section-head" onclick="toggleSection(this)"><div class="section-head-left"><span class="section-tag blue">Cartera</span><span class="section-title-text">Asignación de Activos — ' + asignacion.length + ' acciones</span></div><span class="section-chevron">" + SVG.chevronDown + "</span></div>'
+          + '<div class="section-body" style="padding:0"><div style="overflow-x:auto">'
+          + '<table class="alloc-table"><thead><tr>'
+          + '<th style="padding-left:20px">Empresa</th><th>Ticker</th><th>Sector</th><th style="text-align:right;padding-right:20px">Peso</th><th>Rol</th>'
+          + '</tr></thead><tbody>' + tableRows + '</tbody></table></div></div></div>'
+
+          // Sectores
+          + '<div class="section-card">'
+          + '<div class="section-head" onclick="toggleSection(this)"><div class="section-head-left"><span class="section-tag yellow">Sectores</span><span class="section-title-text">Diversificación Sectorial</span></div><span class="section-chevron">" + SVG.chevronDown + "</span></div>'
+          + '<div class="section-body"><div class="sector-layout">'
+          + '<div class="donut-wrap">' + buildDonut(asignacionSectorial) + '<div class="donut-center"><span class="num">' + asignacionSectorial.length + '</span><span class="lbl">sectores</span></div></div>'
+          + '<div class="sector-list">' + sectorListHTML + '</div>'
+          + '</div></div></div>'
+
+          // Logic + Estimaciones
+          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+          + '<div class="section-card">'
+          + '<div class="section-head" onclick="toggleSection(this)"><div class="section-head-left"><span class="section-tag">Estrategia</span><span class="section-title-text">Lógica de Cartera</span></div><span class="section-chevron">" + SVG.chevronDown + "</span></div>'
+          + '<div class="section-body"><div class="logic-items">' + logicHTML + '</div></div>'
+          + '</div>'
+          + '<div class="section-card">'
+          + '<div class="section-head" onclick="toggleSection(this)"><div class="section-head-left"><span class="section-tag blue">Stats</span><span class="section-title-text">Estimaciones</span></div><span class="section-chevron">" + SVG.chevronDown + "</span></div>'
+          + '<div class="section-body"><div style="display:flex;flex-direction:column;gap:10px">'
+          + '<div class="est-card"><div class="est-icon">" + SVG.trendingUp + "</div><div class="est-label">Rentabilidad esperada</div><div class="est-val" style="color:var(--accent)">' + esc(estimaciones.rentabilidadEsperada || '—') + '</div></div>'
+          + '<div class="est-card"><div class="est-icon">" + SVG.activity + "</div><div class="est-label">Volatilidad</div><div class="est-val" style="color:var(--yellow)">' + esc(estimaciones.volatilidad || '—') + '</div></div>'
+          + '<div class="est-card"><div class="est-icon">" + SVG.trendingDown + "</div><div class="est-label">Drawdown máx.</div><div class="est-val" style="color:var(--red)">' + esc(estimaciones.drawdown || '—') + '</div></div>'
+          + '</div></div></div>'
+          + '</div>'
+
+          // Riesgos
+          + '<div class="section-card">'
+          + '<div class="section-head" onclick="toggleSection(this)"><div class="section-head-left"><span class="section-tag red">Riesgos</span><span class="section-title-text">Riesgos Principales</span></div><span class="section-chevron">" + SVG.chevronDown + "</span></div>'
+          + '<div class="section-body"><div class="risks-list">' + risksHTML + '</div></div></div>'
+
+          // Monitoreo
+          + '<div class="section-card">'
+          + '<div class="section-head" onclick="toggleSection(this)"><div class="section-head-left"><span class="section-tag blue">Monitor</span><span class="section-title-text">Seguimiento & Implementación</span></div><span class="section-chevron">" + SVG.chevronDown + "</span></div>'
+          + '<div class="section-body">'
+          + '<div style="font-size:0.73rem;font-family:var(--mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Frecuencia: <span style="color:var(--accent-2)">' + esc(monitoreo.frecuencia || '—') + '</span></div>'
+          + '<div class="monitor-grid">' + monitorItemsHTML + '</div>'
+          + '<div style="margin-top:16px"><div style="font-size:0.73rem;font-family:var(--mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Implementación</div>'
+          + '<div class="impl-box">' + esc(data.implementacion || '—') + '</div></div>'
+          + '</div></div>'
+
+          // Disclaimer
+          + '<div class="disclaimer"><span class="disclaimer-icon">" + SVG.alertTriangle + "</span><strong style="color:var(--red)">AVISO LEGAL</strong> · Simulación educativa, no constituye asesoría financiera ni recomendación de inversión. Consulta a un profesional antes de invertir.</div>'
+
+          + '</div>';
+
+        
+        requestAnimationFrame(() => {
+          const maxPct = Math.max(...asignacion.map(a => Number(a.porcentaje) || 0), 1);
+          document.querySelectorAll('.pct-fill[data-pct]').forEach(el => {
+            el.style.width = ((Number(el.dataset.pct) / maxPct) * 100) + '%';
+          });
+          document.querySelectorAll('.sector-bar-fill[data-pct]').forEach(el => {
+            el.style.width = el.dataset.pct + '%';
+          });
+        });
+      }
+
+      // ── Form submit ──
+      const form = $('portfolioForm');
+      const submitBtn = $('submitBtn');
+      const spinner = $('spinner');
+      const btnText = $('btnText');
+      const btnIcon = $('btnIcon');
+      const statusMsg = $('statusMsg');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const capital = $('capital').value.trim();
+        const horizon = $('horizon').value.trim();
+        const risk = $('risk').value;
+        const objective = $('objective').value.trim();
+        const constraints = $('constraints').value.trim();
+
+        if (!capital || !horizon || !risk || !objective) {
+          statusMsg.className = 'status-msg error';
+          statusMsg.innerHTML = '" + SVG.alertCircle + " Completa todos los campos requeridos.';
+                    return;
+        }
+
+        submitBtn.disabled = true;
+        spinner.style.display = 'block';
+        btnIcon.style.display = 'none';
+        btnText.textContent = 'Analizando mercado...';
+        statusMsg.className = 'status-msg';
+        statusMsg.textContent = '';
+
+        const panel = $('outputPanel');
+        panel.innerHTML = '<div class="loading-state">'
+          + '<div class="loading-rings"><span></span><span></span><span></span></div>'
+          + '<div class="loading-text">GENERANDO CARTERA OPTIMIZADA</div>'
+          + '<div class="loading-steps">'
+          + '<div class="loading-step"><span class="step-dot"></span>Analizando perfil de riesgo...</div>'
+          + '<div class="loading-step"><span class="step-dot"></span>Seleccionando activos del IPSA...</div>'
+          + '<div class="loading-step"><span class="step-dot"></span>Optimizando distribución sectorial...</div>'
+          + '</div></div>';
 
         try {
-          const response = await fetch("/api/recommend", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+          const res = await fetch('/api/recommend', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ capital, horizon, risk, objective, constraints })
           });
-
-          const result = await response.json();
-
-          if (!response.ok || result?.ok === false) {
-            throw new Error(result?.error || "No fue posible generar la cartera.");
-          }
-
-          renderPortfolio(result?.data || {});
-          statusEl.textContent = "Simulación generada.";
-        } catch (error) {
-          statusEl.className = "status error";
-          statusEl.textContent = error.message || "Error inesperado.";
-          outputEl.textContent = "No se pudo generar la simulación en este momento.";
-        } finally {
-          button.disabled = false;
-          button.textContent = "Generar cartera";
+          const json = await res.json();
+          if (!res.ok || json.ok === false) throw new Error(json.error || 'Error al generar la cartera.');
+          renderPortfolio(json.data || {});
+          statusMsg.className = 'status-msg ok';
+          statusMsg.innerHTML = '" + SVG.checkCircle + " Simulación generada exitosamente';
+                  } catch (err) {
+          statusMsg.className = 'status-msg error';
+          statusMsg.innerHTML = '" + SVG.xCircle + " ' + esc(err.message);
+                    panel.innerHTML = '<div class="empty-state">'
+            + '<div class="empty-icon" style="border-color:rgba(255,69,96,0.2);background:rgba(255,69,96,0.06);color:var(--red)">" + SVG.wifiOff + "</div>'
+            + '<div class="empty-title" style="color:var(--red)">Error al generar</div>'
+            + '<div class="empty-sub">' + esc(err.message) + '</div>'
+            + '</div>';
+                  } finally {
+          submitBtn.disabled = false;
+          spinner.style.display = 'none';
+          btnIcon.style.display = '';
+          btnText.textContent = 'Generar Cartera';
         }
       });
     </script>
