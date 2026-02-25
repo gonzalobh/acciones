@@ -121,19 +121,14 @@
       }
 
       .section {
-        margin-bottom: 16px;
-      }
-
-      .section:last-child {
-        margin-bottom: 0;
+        margin-top: 28px;
+        padding-top: 12px;
+        border-top: 1px solid #e5e5e5;
       }
 
       .section-title {
-        margin: 0 0 6px;
-        font-size: 0.86rem;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
         font-weight: 600;
+        margin-bottom: 8px;
       }
 
       p,
@@ -246,11 +241,6 @@
       const statusEl = document.getElementById("status");
       const outputEl = document.getElementById("output");
 
-      const clpFormatter = new Intl.NumberFormat("es-CL", {
-        style: "currency",
-        currency: "CLP",
-        maximumFractionDigits: 0,
-      });
 
       function escapeHtml(value) {
         return String(value)
@@ -262,88 +252,145 @@
       }
 
       function renderPortfolio(portfolio) {
-        const resumen = portfolio?.resumenEjecutivo;
-        const metricas = portfolio?.metricas || {};
-        const asignacion = Array.isArray(portfolio?.asignacion) ? portfolio.asignacion : [];
-        const riesgos = Array.isArray(portfolio?.riesgosChile) ? portfolio.riesgosChile : [];
-        const rebalanceo = portfolio?.rebalanceo || {};
+        const data = portfolio || {};
+        const asignacion = Array.isArray(data?.asignacion) ? data.asignacion : [];
+        const logicaCartera = Array.isArray(data?.logicaCartera) ? data.logicaCartera : [];
+        const asignacionSectorial = Array.isArray(data?.asignacionSectorial)
+          ? data.asignacionSectorial
+          : [];
+        const riesgosPrincipales = Array.isArray(data?.riesgosPrincipales) ? data.riesgosPrincipales : [];
+        const monitoreo = data?.monitoreo || {};
+        const estimaciones = data?.estimaciones || {};
 
         const rows = asignacion
           .map((item) => {
-            const monto = Number(item?.montoCLP);
             const porcentaje = Number(item?.porcentaje);
             return `
               <tr>
+                <td>${escapeHtml(item?.accion ?? "-")}</td>
                 <td>${escapeHtml(item?.ticker ?? "-")}</td>
-                <td>${escapeHtml(item?.empresa ?? "-")}</td>
                 <td>${escapeHtml(item?.sector ?? "-")}</td>
                 <td>${Number.isFinite(porcentaje) ? `${porcentaje}%` : "-"}</td>
                 <td>${escapeHtml(item?.rol ?? "-")}</td>
-                <td>${Number.isFinite(monto) ? clpFormatter.format(monto) : "-"}</td>
               </tr>
             `;
           })
           .join("");
 
-        const riesgosHtml = riesgos
-          .map((riesgo) => `<li>${escapeHtml(riesgo)}</li>`)
-          .join("");
+        let html = "";
 
-        outputEl.innerHTML = `
-          <section class="section">
-            <h2 class="section-title">Resumen ejecutivo</h2>
-            <p>${escapeHtml(resumen || "No se recibió resumen ejecutivo.")}</p>
-          </section>
+        html += `
+<div class="section">
+  <div class="section-title">Resumen ejecutivo</div>
+  <p>${escapeHtml(data.resumenEjecutivo || "No se recibió resumen ejecutivo.")}</p>
+</div>
 
-          <section class="section">
-            <h2 class="section-title">Métricas estimadas</h2>
-            <p><strong>Rentabilidad esperada:</strong> ${escapeHtml(
-              metricas?.rentabilidadEsperadaRango || "No disponible"
-            )}</p>
-            <p><strong>Volatilidad estimada:</strong> ${escapeHtml(
-              metricas?.volatilidadEstimadaRango || "No disponible"
-            )}</p>
-          </section>
+<div class="section">
+  <div class="section-title">Supuestos macro</div>
+  <p>${escapeHtml(data.supuestosMacro || "No se recibieron supuestos macro.")}</p>
+</div>
+`;
 
-          <section class="section">
-            <h2 class="section-title">Asignación</h2>
-            ${
-              asignacion.length
-                ? `
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Ticker</th>
-                        <th>Empresa</th>
-                        <th>Sector</th>
-                        <th>%</th>
-                        <th>Rol</th>
-                        <th>Monto (CLP)</th>
-                      </tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                  </table>
-                `
-                : '<p class="muted">No se recibió una asignación válida para mostrar.</p>'
-            }
-          </section>
+        html += `
+<div class="section">
+  <div class="section-title">Asignación</div>
+  ${
+    asignacion.length
+      ? `
+        <table>
+          <thead>
+            <tr>
+              <th>Acción</th>
+              <th>Ticker</th>
+              <th>Sector</th>
+              <th>%</th>
+              <th>Rol</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `
+      : '<p class="muted">No se recibió una asignación válida para mostrar.</p>'
+  }
+</div>
+`;
 
-          <section class="section">
-            <h2 class="section-title">Riesgos principales en Chile</h2>
-            ${
-              riesgos.length
-                ? `<ol>${riesgosHtml}</ol>`
-                : '<p class="muted">No se recibieron riesgos específicos.</p>'
-            }
-          </section>
+        html += `<div class="section">
+<div class="section-title">Lógica de la cartera</div>`;
 
-          <section class="section">
-            <h2 class="section-title">Rebalanceo sugerido</h2>
-            <p><strong>Frecuencia:</strong> ${escapeHtml(rebalanceo?.frecuencia || "No disponible")}</p>
-            <p><strong>Regla:</strong> ${escapeHtml(rebalanceo?.regla || "No disponible")}</p>
-            <p><strong>Comentario:</strong> ${escapeHtml(rebalanceo?.comentario || "No disponible")}</p>
-          </section>
-        `;
+        if (logicaCartera.length) {
+          logicaCartera.forEach((b) => {
+            html += `<p><strong>${escapeHtml(b?.bloque ?? "-")}</strong><br>${escapeHtml(
+              b?.descripcion ?? "-"
+            )}</p>`;
+          });
+        } else {
+          html += `<p class="muted">No se recibió una lógica de cartera detallada.</p>`;
+        }
+
+        html += `</div>`;
+
+        html += `<div class="section">
+<div class="section-title">Asignación por sector</div>
+<ul>`;
+
+        if (asignacionSectorial.length) {
+          asignacionSectorial.forEach((s) => {
+            html += `<li>${escapeHtml(s?.sector ?? "-")}: ${escapeHtml(s?.porcentaje ?? "-")}%</li>`;
+          });
+        } else {
+          html += `<li class="muted">No se recibió asignación sectorial.</li>`;
+        }
+
+        html += `</ul></div>`;
+
+        html += `<div class="section">
+<div class="section-title">Estimaciones</div>
+<p><strong>Rentabilidad esperada:</strong> ${escapeHtml(
+          estimaciones?.rentabilidadEsperada || "No disponible"
+        )}</p>
+<p><strong>Volatilidad:</strong> ${escapeHtml(estimaciones?.volatilidad || "No disponible")}</p>
+<p><strong>Drawdown:</strong> ${escapeHtml(estimaciones?.drawdown || "No disponible")}</p>
+</div>`;
+
+        html += `<div class="section">
+<div class="section-title">Riesgos principales</div>
+<ol>`;
+
+        if (riesgosPrincipales.length) {
+          riesgosPrincipales.forEach((r) => {
+            html += `<li>${escapeHtml(r)}</li>`;
+          });
+        } else {
+          html += `<li class="muted">No se recibieron riesgos principales.</li>`;
+        }
+
+        html += `</ol></div>`;
+
+        html += `<div class="section">
+<div class="section-title">Monitoreo</div>
+<p><strong>Frecuencia:</strong> ${escapeHtml(monitoreo?.frecuencia || "No disponible")}</p>
+<p><strong>Qué mirar:</strong></p>
+<ul>`;
+
+        if (Array.isArray(monitoreo?.queMirar) && monitoreo.queMirar.length) {
+          monitoreo.queMirar.forEach((indicador) => {
+            html += `<li>${escapeHtml(indicador)}</li>`;
+          });
+        } else {
+          html += `<li class="muted">No se recibieron indicadores de seguimiento.</li>`;
+        }
+
+        html += `</ul></div>`;
+
+        html += `
+<div class="section">
+  <div class="section-title">Sugerencia de implementación</div>
+  <p>${escapeHtml(data.implementacion || "No se recibió una guía de implementación.")}</p>
+</div>
+`;
+
+        outputEl.innerHTML = html;
       }
 
       form.addEventListener("submit", async (event) => {

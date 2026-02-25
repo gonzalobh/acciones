@@ -16,52 +16,73 @@ function isMissing(value) {
 }
 
 function buildPrompt({ monto, horizonte, riesgo, objetivo, restricciones }) {
-  return [
-    "Devuelve SOLO JSON válido, sin markdown, sin bloques de código y sin texto adicional.",
-    "Todas las claves y todos los textos deben estar en español.",
-    "Construye una propuesta educativa de cartera de acciones chilenas para este perfil:",
-    `- Monto (CLP): ${monto}`,
-    `- Horizonte (años): ${horizonte}`,
-    `- Riesgo: ${riesgo}`,
-    `- Objetivo: ${objetivo}`,
-    `- Restricciones: ${restricciones || "Sin restricciones adicionales"}`,
-    "",
-    "Restricciones del modelo:",
-    "- Solo acciones chilenas con liquidez razonable",
-    "- Máximo 12 acciones",
-    "- Ninguna acción > 20%",
-    "- Evitar concentración sectorial extrema",
-    "- No repetir tickers",
-    "- Responder en español",
-    "- No prometer rentabilidad",
-    "- Si das rangos, usa lenguaje prudente",
-    "- JSON válido solamente",
-    "",
-    "Estructura JSON requerida (claves exactas):",
-    '{',
-    '  "resumenEjecutivo": "string",',
-    '  "asignacion": [',
-    "    {",
-    '      "ticker": "string",',
-    '      "empresa": "string",',
-    '      "sector": "string",',
-    '      "porcentaje": 0,',
-    '      "rol": "string",',
-    '      "montoCLP": 0',
-    "    }",
-    "  ],",
-    '  "riesgosChile": ["string", "string"],',
-    '  "rebalanceo": {',
-    '    "frecuencia": "string",',
-    '    "regla": "string",',
-    '    "comentario": "string"',
-    "  },",
-    '  "metricas": {',
-    '    "rentabilidadEsperadaRango": "string",',
-    '    "volatilidadEstimadaRango": "string"',
-    "  }",
-    "}",
-  ].join("\n");
+  return `
+Actúa como un asesor de inversiones especializado en el mercado accionario chileno.
+
+Debes elaborar un informe profesional, claro y educativo.
+No respondas como chatbot. Escribe como un analista financiero.
+
+IMPORTANTE:
+Devuelve SOLO JSON válido. No uses markdown.
+
+Perfil del inversionista:
+- Capital disponible: ${monto} CLP
+- Horizonte: ${horizonte} años
+- Nivel de riesgo: ${riesgo}
+- Objetivo: ${objetivo}
+- Restricciones: ${restricciones || "Ninguna"}
+
+Reglas de construcción:
+- Usar acciones chilenas líquidas (IPSA y midcaps razonables).
+- Entre 12 y 16 acciones.
+- Diversificar por sectores.
+- No concentrar más de 30% en un sector.
+- Explicar la lógica económica detrás de la cartera.
+- No prometer resultados ni usar lenguaje comercial.
+- Lenguaje prudente y profesional.
+
+Formato JSON obligatorio:
+
+{
+  "resumenEjecutivo": "explicación clara de la estrategia",
+  "supuestosMacro": "contexto económico chileno relevante",
+  "asignacion": [
+    {
+      "accion": "Nombre empresa",
+      "ticker": "TICKER",
+      "sector": "Sector",
+      "porcentaje": number,
+      "rol": "función dentro de la cartera"
+    }
+  ],
+  "asignacionSectorial": [
+    {
+      "sector": "Sector",
+      "porcentaje": number
+    }
+  ],
+  "logicaCartera": [
+    {
+      "bloque": "Nombre del bloque",
+      "descripcion": "explicación estratégica"
+    }
+  ],
+  "estimaciones": {
+    "rentabilidadEsperada": "rango razonable",
+    "volatilidad": "rango esperado",
+    "drawdown": "posibles caídas"
+  },
+  "riesgosPrincipales": [
+    "riesgo explicado",
+    "riesgo explicado"
+  ],
+  "monitoreo": {
+    "frecuencia": "cómo seguir la cartera",
+    "queMirar": ["indicador", "indicador"]
+  },
+  "implementacion": "cómo entrar gradualmente en el mercado"
+}
+`;
 }
 
 export default async function handler(req) {
