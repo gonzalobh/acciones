@@ -658,29 +658,26 @@
       const $ = id => document.getElementById(id);
       const html = document.documentElement;
 
-      // ── Inline SVG icons (no CDN needed) ──
-      const SVG = {
-        chevronDown: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
-        chevronRight: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',
-        trendingUp: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
-        trendingDown: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>',
-        activity: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
-        alertTriangle: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
-        alertCircle: '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-        checkCircle: '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
-        xCircle: '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
-        wifiOff: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>',
+      // ── SVG icons ──
+      const I = {
+        chevronDown:  `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`,
+        chevronRight: `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`,
+        trendingUp:   `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+        trendingDown: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>`,
+        activity:     `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+        alertTri:     `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+        alertCircle:  `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+        checkCircle:  `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+        xCircle:      `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+        serverOff:    `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`,
       };
-
 
       // ── Theme ──
       const themeBtn = $('themeBtn');
       const savedTheme = localStorage.getItem('fulcl-theme') || 'dark';
       html.setAttribute('data-theme', savedTheme);
-
       themeBtn.addEventListener('click', () => {
-        const current = html.getAttribute('data-theme');
-        const next = current === 'dark' ? 'light' : 'dark';
+        const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         html.setAttribute('data-theme', next);
         localStorage.setItem('fulcl-theme', next);
       });
@@ -692,7 +689,7 @@
         const v = horizonInput.value;
         horizonDisplay.textContent = v + ' ' + (v == 1 ? 'año' : 'años');
         const pct = ((v - 1) / 19) * 100;
-        horizonInput.style.background = 'linear-gradient(90deg, var(--accent) ' + pct + '%, rgba(128,128,128,0.12) ' + pct + '%)';
+        horizonInput.style.background = `linear-gradient(90deg, var(--accent) ${pct}%, rgba(128,128,128,0.12) ${pct}%)`;
       });
       horizonInput.dispatchEvent(new Event('input'));
 
@@ -719,21 +716,21 @@
         return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(num);
       }
 
-      const SECTOR_COLORS = ['#00ffa3','#00d4ff','#ffd700','#ff6b35','#a78bfa','#fb7185','#34d399','#60a5fa','#f59e0b','#ec4899'];
+      const COLORS = ['#00ffa3','#00d4ff','#ffd700','#ff6b35','#a78bfa','#fb7185','#34d399','#60a5fa','#f59e0b','#ec4899'];
 
       function buildDonut(sectors) {
-        if (!sectors.length) return '<svg width="140" height="140"><circle cx="70" cy="70" r="52" fill="none" stroke="rgba(128,128,128,0.1)" stroke-width="18"/></svg>';
-        const r = 52, cx = 70, cy = 70, circ = 2 * Math.PI * r;
+        if (!sectors.length) return `<svg width="140" height="140"><circle cx="70" cy="70" r="52" fill="none" stroke="rgba(128,128,128,0.1)" stroke-width="18"/></svg>`;
+        const circ = 2 * Math.PI * 52;
         const total = sectors.reduce((s, x) => s + (Number(x.porcentaje) || 0), 0) || 100;
         let offset = 0;
         const paths = sectors.map((s, i) => {
           const pct = (Number(s.porcentaje) || 0) / total;
           const dash = pct * circ, gap = circ - dash;
-          const p = '<circle cx="70" cy="70" r="52" fill="none" stroke="' + SECTOR_COLORS[i % SECTOR_COLORS.length] + '" stroke-width="18" stroke-dasharray="' + dash + ' ' + gap + '" stroke-dashoffset="' + (-offset * circ) + '" />';
+          const p = `<circle cx="70" cy="70" r="52" fill="none" stroke="${COLORS[i % COLORS.length]}" stroke-width="18" stroke-dasharray="${dash} ${gap}" stroke-dashoffset="${-offset * circ}" />`;
           offset += pct;
           return p;
         }).join('');
-        return '<svg width="140" height="140" style="transform:rotate(-90deg)">' + paths + '</svg>';
+        return `<svg width="140" height="140" style="transform:rotate(-90deg)">${paths}</svg>`;
       }
 
       function toggleSection(head) {
@@ -744,119 +741,137 @@
         chevron.style.transform = isOpen ? 'rotate(-90deg)' : '';
       }
 
+      function sectionHead(tag, tagClass, title) {
+        return `<div class="section-head" onclick="toggleSection(this)"><div class="section-head-left"><span class="section-tag ${tagClass}">${tag}</span><span class="section-title-text">${title}</span></div><span class="section-chevron">${I.chevronDown}</span></div>`;
+      }
+
       function renderPortfolio(data) {
         const panel = $('outputPanel');
-        const asignacion = Array.isArray(data.asignacion) ? data.asignacion : [];
-        const asignacionSectorial = Array.isArray(data.asignacionSectorial) ? data.asignacionSectorial : [];
-        const logicaCartera = Array.isArray(data.logicaCartera) ? data.logicaCartera : [];
-        const riesgosPrincipales = Array.isArray(data.riesgosPrincipales) ? data.riesgosPrincipales : [];
-        const monitoreo = data.monitoreo || {};
-        const estimaciones = data.estimaciones || {};
-        const capitalVal = Number($('capital').value) || 0;
+        const asignacion        = Array.isArray(data.asignacion) ? data.asignacion : [];
+        const asignSectorial    = Array.isArray(data.asignacionSectorial) ? data.asignacionSectorial : [];
+        const logicaCartera     = Array.isArray(data.logicaCartera) ? data.logicaCartera : [];
+        const riesgosPrincipales= Array.isArray(data.riesgosPrincipales) ? data.riesgosPrincipales : [];
+        const monitoreo         = data.monitoreo || {};
+        const est               = data.estimaciones || {};
+        const capitalVal        = Number($('capital').value) || 0;
 
         const tableRows = asignacion.map(item => {
           const pct = Number(item.porcentaje) || 0;
-          return '<tr>'
-            + '<td><span style="font-weight:500;color:var(--text)">' + esc(item.accion) + '</span></td>'
-            + '<td><span class="ticker-badge">' + esc(item.ticker) + '</span></td>'
-            + '<td><span style="font-size:0.82rem;color:var(--text-dim)">' + esc(item.sector) + '</span></td>'
-            + '<td><div class="pct-bar-wrap"><div class="pct-track"><div class="pct-fill" data-pct="' + pct + '"></div></div><span class="pct-val">' + pct + '%</span></div></td>'
-            + '<td><span class="rol-text">' + esc(item.rol) + '</span></td>'
-            + '</tr>';
+          return `<tr>
+            <td><span style="font-weight:500;color:var(--text)">${esc(item.accion)}</span></td>
+            <td><span class="ticker-badge">${esc(item.ticker)}</span></td>
+            <td><span style="font-size:0.82rem;color:var(--text-dim)">${esc(item.sector)}</span></td>
+            <td><div class="pct-bar-wrap"><div class="pct-track"><div class="pct-fill" data-pct="${pct}"></div></div><span class="pct-val">${pct}%</span></div></td>
+            <td><span class="rol-text">${esc(item.rol)}</span></td>
+          </tr>`;
         }).join('');
 
-        const sectorListHTML = asignacionSectorial.map((s, i) => {
-          const color = SECTOR_COLORS[i % SECTOR_COLORS.length];
+        const sectorListHTML = asignSectorial.map((s, i) => {
+          const color = COLORS[i % COLORS.length];
           const pct = Number(s.porcentaje) || 0;
-          return '<div class="sector-row">'
-            + '<div class="sector-name-wrap"><div class="sector-color-dot" style="background:' + color + '"></div><span class="sector-name">' + esc(s.sector) + '</span></div>'
-            + '<span class="sector-pct">' + pct + '%</span>'
-            + '<div class="sector-bar-full"><div class="sector-bar-fill" style="background:' + color + '" data-pct="' + pct + '"></div></div>'
-            + '</div>';
+          return `<div class="sector-row">
+            <div class="sector-name-wrap"><div class="sector-color-dot" style="background:${color}"></div><span class="sector-name">${esc(s.sector)}</span></div>
+            <span class="sector-pct">${pct}%</span>
+            <div class="sector-bar-full"><div class="sector-bar-fill" style="background:${color}" data-pct="${pct}"></div></div>
+          </div>`;
         }).join('');
 
         const logicHTML = logicaCartera.map(b =>
-          '<div class="logic-item"><div class="logic-item-title">' + esc(b.bloque) + '</div><div class="logic-item-desc">' + esc(b.descripcion) + '</div></div>'
+          `<div class="logic-item"><div class="logic-item-title">${esc(b.bloque)}</div><div class="logic-item-desc">${esc(b.descripcion)}</div></div>`
         ).join('');
 
         const risksHTML = riesgosPrincipales.map((r, i) =>
-          '<div class="risk-item" style="animation-delay:' + (i * 0.05) + 's"><span class="risk-num">' + String(i+1).padStart(2,'0') + '</span><span>' + esc(r) + '</span></div>'
+          `<div class="risk-item" style="animation-delay:${i * 0.05}s"><span class="risk-num">${String(i+1).padStart(2,'0')}</span><span>${esc(r)}</span></div>`
         ).join('');
 
-        const monitorItemsHTML = Array.isArray(monitoreo.queMirar)
-          ? monitoreo.queMirar.map(q => '<div class="monitor-item"><span class="monitor-item-arrow">' + SVG.chevronRight + '</span>' + esc(q) + '</div>').join('')
+        const monitorHTML = Array.isArray(monitoreo.queMirar)
+          ? monitoreo.queMirar.map(q => `<div class="monitor-item"><span class="monitor-item-arrow">${I.chevronRight}</span>${esc(q)}</div>`).join('')
           : '';
 
-        panel.innerHTML = '<div class="result-container">'
+        panel.innerHTML = `<div class="result-container">
 
-          // Stats
-          + '<div class="stats-bar">'
-          + '<div class="stat-card"><div class="stat-label">Capital simulado</div><div class="stat-value">' + (capitalVal > 0 ? fmtCLP(capitalVal) : '—') + '</div></div>'
-          + '<div class="stat-card"><div class="stat-label">Rentabilidad esperada</div><div class="stat-value blue">' + esc(estimaciones.rentabilidadEsperada || '—') + '</div></div>'
-          + '<div class="stat-card"><div class="stat-label">Volatilidad estimada</div><div class="stat-value yellow">' + esc(estimaciones.volatilidad || '—') + '</div></div>'
-          + '</div>'
+          <div class="stats-bar">
+            <div class="stat-card"><div class="stat-label">Capital simulado</div><div class="stat-value">${capitalVal > 0 ? fmtCLP(capitalVal) : '—'}</div></div>
+            <div class="stat-card"><div class="stat-label">Rentabilidad esperada</div><div class="stat-value blue">${esc(est.rentabilidadEsperada || '—')}</div></div>
+            <div class="stat-card"><div class="stat-label">Volatilidad estimada</div><div class="stat-value yellow">${esc(est.volatilidad || '—')}</div></div>
+          </div>
 
-          // Resumen
-          + '<div class="section-card">'
-          + '<div class="section-head" onclick="toggleSection(this)"><div class="section-head-left"><span class="section-tag">Resumen</span><span class="section-title-text">Estrategia & Supuestos Macro</span></div><span class="section-chevron">" + SVG.chevronDown + "</span></div>'
-          + '<div class="section-body"><div class="section-text" style="margin-bottom:14px">' + esc(data.resumenEjecutivo || '') + '</div>'
-          + '<div style="padding:14px 16px;border-radius:12px;background:var(--accent-2-dim);border:1px solid rgba(0,212,255,0.1)">'
-          + '<div style="font-size:0.63rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.08em;color:var(--accent-2);margin-bottom:6px">Supuestos Macro</div>'
-          + '<div class="section-text">' + esc(data.supuestosMacro || '') + '</div></div>'
-          + '</div></div>'
+          <div class="section-card">
+            ${sectionHead('Resumen','','Estrategia &amp; Supuestos Macro')}
+            <div class="section-body">
+              <div class="section-text" style="margin-bottom:14px">${esc(data.resumenEjecutivo || '')}</div>
+              <div style="padding:14px 16px;border-radius:12px;background:var(--accent-2-dim);border:1px solid rgba(0,212,255,0.1)">
+                <div style="font-size:0.63rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.08em;color:var(--accent-2);margin-bottom:6px">Supuestos Macro</div>
+                <div class="section-text">${esc(data.supuestosMacro || '')}</div>
+              </div>
+            </div>
+          </div>
 
-          // Allocation
-          + '<div class="section-card">'
-          + '<div class="section-head" onclick="toggleSection(this)"><div class="section-head-left"><span class="section-tag blue">Cartera</span><span class="section-title-text">Asignación de Activos — ' + asignacion.length + ' acciones</span></div><span class="section-chevron">" + SVG.chevronDown + "</span></div>'
-          + '<div class="section-body" style="padding:0"><div style="overflow-x:auto">'
-          + '<table class="alloc-table"><thead><tr>'
-          + '<th style="padding-left:20px">Empresa</th><th>Ticker</th><th>Sector</th><th style="text-align:right;padding-right:20px">Peso</th><th>Rol</th>'
-          + '</tr></thead><tbody>' + tableRows + '</tbody></table></div></div></div>'
+          <div class="section-card">
+            ${sectionHead('Cartera','blue',`Asignación de Activos &mdash; ${asignacion.length} acciones`)}
+            <div class="section-body" style="padding:0">
+              <div style="overflow-x:auto">
+                <table class="alloc-table">
+                  <thead><tr><th style="padding-left:20px">Empresa</th><th>Ticker</th><th>Sector</th><th style="text-align:right;padding-right:20px">Peso</th><th>Rol</th></tr></thead>
+                  <tbody>${tableRows}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>
 
-          // Sectores
-          + '<div class="section-card">'
-          + '<div class="section-head" onclick="toggleSection(this)"><div class="section-head-left"><span class="section-tag yellow">Sectores</span><span class="section-title-text">Diversificación Sectorial</span></div><span class="section-chevron">" + SVG.chevronDown + "</span></div>'
-          + '<div class="section-body"><div class="sector-layout">'
-          + '<div class="donut-wrap">' + buildDonut(asignacionSectorial) + '<div class="donut-center"><span class="num">' + asignacionSectorial.length + '</span><span class="lbl">sectores</span></div></div>'
-          + '<div class="sector-list">' + sectorListHTML + '</div>'
-          + '</div></div></div>'
+          <div class="section-card">
+            ${sectionHead('Sectores','yellow','Diversificación Sectorial')}
+            <div class="section-body">
+              <div class="sector-layout">
+                <div class="donut-wrap">${buildDonut(asignSectorial)}<div class="donut-center"><span class="num">${asignSectorial.length}</span><span class="lbl">sectores</span></div></div>
+                <div class="sector-list">${sectorListHTML}</div>
+              </div>
+            </div>
+          </div>
 
-          // Logic + Estimaciones
-          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
-          + '<div class="section-card">'
-          + '<div class="section-head" onclick="toggleSection(this)"><div class="section-head-left"><span class="section-tag">Estrategia</span><span class="section-title-text">Lógica de Cartera</span></div><span class="section-chevron">" + SVG.chevronDown + "</span></div>'
-          + '<div class="section-body"><div class="logic-items">' + logicHTML + '</div></div>'
-          + '</div>'
-          + '<div class="section-card">'
-          + '<div class="section-head" onclick="toggleSection(this)"><div class="section-head-left"><span class="section-tag blue">Stats</span><span class="section-title-text">Estimaciones</span></div><span class="section-chevron">" + SVG.chevronDown + "</span></div>'
-          + '<div class="section-body"><div style="display:flex;flex-direction:column;gap:10px">'
-          + '<div class="est-card"><div class="est-icon">" + SVG.trendingUp + "</div><div class="est-label">Rentabilidad esperada</div><div class="est-val" style="color:var(--accent)">' + esc(estimaciones.rentabilidadEsperada || '—') + '</div></div>'
-          + '<div class="est-card"><div class="est-icon">" + SVG.activity + "</div><div class="est-label">Volatilidad</div><div class="est-val" style="color:var(--yellow)">' + esc(estimaciones.volatilidad || '—') + '</div></div>'
-          + '<div class="est-card"><div class="est-icon">" + SVG.trendingDown + "</div><div class="est-label">Drawdown máx.</div><div class="est-val" style="color:var(--red)">' + esc(estimaciones.drawdown || '—') + '</div></div>'
-          + '</div></div></div>'
-          + '</div>'
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div class="section-card">
+              ${sectionHead('Estrategia','','Lógica de Cartera')}
+              <div class="section-body"><div class="logic-items">${logicHTML}</div></div>
+            </div>
+            <div class="section-card">
+              ${sectionHead('Stats','blue','Estimaciones')}
+              <div class="section-body">
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <div class="est-card"><div class="est-icon" style="color:var(--accent)">${I.trendingUp}</div><div class="est-label">Rentabilidad esperada</div><div class="est-val" style="color:var(--accent)">${esc(est.rentabilidadEsperada || '—')}</div></div>
+                  <div class="est-card"><div class="est-icon" style="color:var(--yellow)">${I.activity}</div><div class="est-label">Volatilidad</div><div class="est-val" style="color:var(--yellow)">${esc(est.volatilidad || '—')}</div></div>
+                  <div class="est-card"><div class="est-icon" style="color:var(--red)">${I.trendingDown}</div><div class="est-label">Drawdown máx.</div><div class="est-val" style="color:var(--red)">${esc(est.drawdown || '—')}</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          // Riesgos
-          + '<div class="section-card">'
-          + '<div class="section-head" onclick="toggleSection(this)"><div class="section-head-left"><span class="section-tag red">Riesgos</span><span class="section-title-text">Riesgos Principales</span></div><span class="section-chevron">" + SVG.chevronDown + "</span></div>'
-          + '<div class="section-body"><div class="risks-list">' + risksHTML + '</div></div></div>'
+          <div class="section-card">
+            ${sectionHead('Riesgos','red','Riesgos Principales')}
+            <div class="section-body"><div class="risks-list">${risksHTML}</div></div>
+          </div>
 
-          // Monitoreo
-          + '<div class="section-card">'
-          + '<div class="section-head" onclick="toggleSection(this)"><div class="section-head-left"><span class="section-tag blue">Monitor</span><span class="section-title-text">Seguimiento & Implementación</span></div><span class="section-chevron">" + SVG.chevronDown + "</span></div>'
-          + '<div class="section-body">'
-          + '<div style="font-size:0.73rem;font-family:var(--mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Frecuencia: <span style="color:var(--accent-2)">' + esc(monitoreo.frecuencia || '—') + '</span></div>'
-          + '<div class="monitor-grid">' + monitorItemsHTML + '</div>'
-          + '<div style="margin-top:16px"><div style="font-size:0.73rem;font-family:var(--mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Implementación</div>'
-          + '<div class="impl-box">' + esc(data.implementacion || '—') + '</div></div>'
-          + '</div></div>'
+          <div class="section-card">
+            ${sectionHead('Monitor','blue','Seguimiento &amp; Implementación')}
+            <div class="section-body">
+              <div style="font-size:0.73rem;font-family:var(--mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">
+                Frecuencia: <span style="color:var(--accent-2)">${esc(monitoreo.frecuencia || '—')}</span>
+              </div>
+              <div class="monitor-grid">${monitorHTML}</div>
+              <div style="margin-top:16px">
+                <div style="font-size:0.73rem;font-family:var(--mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Implementación</div>
+                <div class="impl-box">${esc(data.implementacion || '—')}</div>
+              </div>
+            </div>
+          </div>
 
-          // Disclaimer
-          + '<div class="disclaimer"><span class="disclaimer-icon">" + SVG.alertTriangle + "</span><strong style="color:var(--red)">AVISO LEGAL</strong> · Simulación educativa, no constituye asesoría financiera ni recomendación de inversión. Consulta a un profesional antes de invertir.</div>'
+          <div class="disclaimer">
+            <span class="disclaimer-icon">${I.alertTri}</span>
+            <strong style="color:var(--red)">AVISO LEGAL</strong> · Simulación educativa, no constituye asesoría financiera ni recomendación de inversión. Consulta a un profesional antes de invertir.
+          </div>
 
-          + '</div>';
+        </div>`;
 
-        
         requestAnimationFrame(() => {
           const maxPct = Math.max(...asignacion.map(a => Number(a.porcentaje) || 0), 1);
           document.querySelectorAll('.pct-fill[data-pct]').forEach(el => {
@@ -869,25 +884,25 @@
       }
 
       // ── Form submit ──
-      const form = $('portfolioForm');
+      const form      = $('portfolioForm');
       const submitBtn = $('submitBtn');
-      const spinner = $('spinner');
-      const btnText = $('btnText');
-      const btnIcon = $('btnIcon');
+      const spinner   = $('spinner');
+      const btnText   = $('btnText');
+      const btnIcon   = $('btnIcon');
       const statusMsg = $('statusMsg');
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const capital = $('capital').value.trim();
-        const horizon = $('horizon').value.trim();
-        const risk = $('risk').value;
-        const objective = $('objective').value.trim();
+        const capital     = $('capital').value.trim();
+        const horizon     = $('horizon').value.trim();
+        const risk        = $('risk').value;
+        const objective   = $('objective').value.trim();
         const constraints = $('constraints').value.trim();
 
         if (!capital || !horizon || !risk || !objective) {
           statusMsg.className = 'status-msg error';
-          statusMsg.innerHTML = '" + SVG.alertCircle + " Completa todos los campos requeridos.';
-                    return;
+          statusMsg.innerHTML = I.alertCircle + ' Completa todos los campos requeridos.';
+          return;
         }
 
         submitBtn.disabled = true;
@@ -897,18 +912,18 @@
         statusMsg.className = 'status-msg';
         statusMsg.textContent = '';
 
-        const panel = $('outputPanel');
-        panel.innerHTML = '<div class="loading-state">'
-          + '<div class="loading-rings"><span></span><span></span><span></span></div>'
-          + '<div class="loading-text">GENERANDO CARTERA OPTIMIZADA</div>'
-          + '<div class="loading-steps">'
-          + '<div class="loading-step"><span class="step-dot"></span>Analizando perfil de riesgo...</div>'
-          + '<div class="loading-step"><span class="step-dot"></span>Seleccionando activos del IPSA...</div>'
-          + '<div class="loading-step"><span class="step-dot"></span>Optimizando distribución sectorial...</div>'
-          + '</div></div>';
+        $('outputPanel').innerHTML = `<div class="loading-state">
+          <div class="loading-rings"><span></span><span></span><span></span></div>
+          <div class="loading-text">GENERANDO CARTERA OPTIMIZADA</div>
+          <div class="loading-steps">
+            <div class="loading-step"><span class="step-dot"></span>Analizando perfil de riesgo...</div>
+            <div class="loading-step"><span class="step-dot"></span>Seleccionando activos del IPSA...</div>
+            <div class="loading-step"><span class="step-dot"></span>Optimizando distribución sectorial...</div>
+          </div>
+        </div>`;
 
         try {
-          const res = await fetch('/api/recommend', {
+          const res  = await fetch('/api/recommend', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ capital, horizon, risk, objective, constraints })
@@ -917,16 +932,17 @@
           if (!res.ok || json.ok === false) throw new Error(json.error || 'Error al generar la cartera.');
           renderPortfolio(json.data || {});
           statusMsg.className = 'status-msg ok';
-          statusMsg.innerHTML = '" + SVG.checkCircle + " Simulación generada exitosamente';
-                  } catch (err) {
+          statusMsg.innerHTML = I.checkCircle + ' Simulación generada exitosamente';
+        } catch (err) {
+          const msg = err.message || 'Error inesperado';
           statusMsg.className = 'status-msg error';
-          statusMsg.innerHTML = '" + SVG.xCircle + " ' + esc(err.message);
-                    panel.innerHTML = '<div class="empty-state">'
-            + '<div class="empty-icon" style="border-color:rgba(255,69,96,0.2);background:rgba(255,69,96,0.06);color:var(--red)">" + SVG.wifiOff + "</div>'
-            + '<div class="empty-title" style="color:var(--red)">Error al generar</div>'
-            + '<div class="empty-sub">' + esc(err.message) + '</div>'
-            + '</div>';
-                  } finally {
+          statusMsg.innerHTML = I.xCircle + ' ' + esc(msg);
+          $('outputPanel').innerHTML = `<div class="empty-state">
+            <div class="empty-icon" style="border-color:rgba(255,69,96,0.2);background:rgba(255,69,96,0.06);color:var(--red)">${I.serverOff}</div>
+            <div class="empty-title" style="color:var(--red)">Error al generar</div>
+            <div class="empty-sub">${esc(msg)}</div>
+          </div>`;
+        } finally {
           submitBtn.disabled = false;
           spinner.style.display = 'none';
           btnIcon.style.display = '';

@@ -1,5 +1,6 @@
 export const config = {
   runtime: "edge",
+  maxDuration: 60,
 };
 
 function jsonResponse(body, status = 200) {
@@ -132,7 +133,8 @@ export default async function handler(req) {
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        temperature: 0.3,
+        temperature: 0.2,
+        max_output_tokens: 2000,
         input: [
           {
             role: "user",
